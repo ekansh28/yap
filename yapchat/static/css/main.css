@@ -1,0 +1,18 @@
+html, body {
+    height: 100%;
+    margin: 0;
+    overflow: hidden; /* Prevent scrollbars if content slightly exceeds viewport */
+}
+
+body {
+    background-color: #c0c0c0; /* Windows 98 background color */
+    display: flex;
+    justify-content: center; /* Center horizontally */
+    align-items: center;     /* Center vertically */
+}
+
+/* Ensure the window doesn't shrink and has some default styling */
+.window {
+    flex-shrink: 0;
+    /* You might need to add max-width and max-height if the content is too large */
+}

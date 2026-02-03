@@ -1,0 +1,66 @@
+{% load static %}
+<!-- chat/templates/chat/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="https://unpkg.com/98.css">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <title>Chat Rooms</title>
+</head>
+<body>
+     <div class="window" style="width: 300px">
+       <div class="title-bar">
+         <div class="title-bar-text">Chat Entry</div>
+         <div class="title-bar-controls">
+           <button aria-label="Minimize"></button>
+           <button aria-label="Maximize"></button>
+           <button aria-label="Close"></button>
+         </div>
+       </div>
+      <div class="window-body">
+        <p>enter your username</p>
+        <input id="user-name-input" type="text" style="width: 100%"><br><br>
+        <input id="user-name-submit" type="button" value="Enter">
+      </div>
+    </div>
+
+
+    <script>
+        document.querySelector('#user-name-input').focus();
+        document.querySelector('#user-name-input').onkeyup = function(e) {
+            if (e.key === 'Enter') {  // enter, return
+                document.querySelector('#user-name-submit').click();
+            }
+        };
+
+        document.querySelector('#user-name-submit').onclick = function(e) {
+            var userNameInput = document.querySelector('#user-name-input');
+            var userName = userNameInput.value.trim();
+            console.log("Capturing username:", userName);
+
+            if (!userName) {
+                alert("Please enter a username");
+                return;
+            }
+            
+            // 1. Save the username to LocalStorage so we can use it in the chat room
+            localStorage.setItem('chat_username', userName);
+
+            // Asking Backend for Room Assignment
+            fetch('/chat/join-lobby/')
+
+            // parsing the status code response into json
+             .then(response => response.json())
+             .then(data => {
+                window.location.pathname = '/chat/' + data.room_name + '/';
+             })
+             .catch(error =>{
+                console.error('Error : ', error)
+             })
+
+        
+        };
+    </script>
+</body>
+</html>
