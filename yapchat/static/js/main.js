@@ -1,63 +1,67 @@
 document.addEventListener('DOMContentLoaded', () => {
-    const chatLog = document.getElementById('chat-log');
-    const messageInput = document.getElementById('chat-message-input');
-    const sendButton = document.getElementById('chat-message-submit');
-    const muteButton = document.getElementById('btn-mute');
-    const videoOffButton = document.getElementById('btn-video-off');
-    const shareScreenButton = document.getElementById('btn-share-screen');
-    const stopButton = document.querySelector('.btn-stop');
+    // 1. Get Room Name and Username
+    const roomNameElement = document.getElementById('room-name');
+    if (!roomNameElement) {
+        console.error('Room name script tag not found!');
+        return;
+    }
+    const roomName = JSON.parse(roomNameElement.textContent);
+    
+    const user_name = localStorage.getItem('chat_username') || 'Anonymous';
+    console.log("Retrieved username from storage:", user_name);
 
-    // Helper to append message
-    function appendMessage(text, sender) {
-        const messageDiv = document.createElement('div');
-        messageDiv.classList.add('message', sender);
-        messageDiv.textContent = text; // In a real app, use textContent for safety
-        chatLog.appendChild(messageDiv);
-        chatLog.scrollTop = chatLog.scrollHeight;
+    // 2. Setup WebSocket
+    const chatSocket = new WebSocket(
+        'ws://'
+        + window.location.host
+        + '/ws/chat/'
+        + roomName
+        + '/'
+    );
+
+    // 3. Handle Incoming Messages
+    chatSocket.onmessage = function(e) {
+        const data = JSON.parse(e.data);
+        const sender = data.username ? data.username : 'Stranger';
+        const chatLog = document.querySelector('#chat-log');
+        if (chatLog) {
+            chatLog.value += (sender + " : " + data.message + '\n');
+        }
+    };
+
+    chatSocket.onclose = function(e) {
+        console.error('Chat socket closed unexpectedly');
+    };
+
+    // 4. Handle Input and Send
+    const messageInput = document.querySelector('#chat-message-input');
+    const messageSubmit = document.querySelector('#chat-message-submit');
+
+    if (messageInput) {
+        messageInput.focus();
+        messageInput.onkeyup = function(e) {
+            if (e.key === 'Enter') {  // enter, return
+                if (messageSubmit) {
+                    messageSubmit.click();
+                }
+            }
+        };
     }
 
-    // Send Message Logic
-    function sendMessage() {
-        const message = messageInput.value.trim();
-        if (message) {
-            appendMessage('You: ' + message, 'you');
+    if (messageSubmit) {
+        messageSubmit.onclick = function(e) {
+            if (!messageInput) return;
+            
+            const message = messageInput.value;
+            
+            // Only send non-empty messages
+            if (message.trim() === "") return;
+
+            chatSocket.send(JSON.stringify({
+                'message': message,
+                'username' : user_name
+            }));
             messageInput.value = '';
-            // Here you would typically send the message via WebSocket
-        }
+        };
     }
-
-    sendButton.addEventListener('click', sendMessage);
-
-    messageInput.addEventListener('keypress', (e) => {
-        if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            sendMessage();
-        }
-    });
-
-    // Media Control Placeholders
-    let isMuted = false;
-    muteButton.addEventListener('click', () => {
-        isMuted = !isMuted;
-        muteButton.textContent = isMuted ? 'Unmute Audio' : 'Mute Audio';
-        console.log('Audio muted:', isMuted);
-    });
-
-    let isVideoOff = false;
-    videoOffButton.addEventListener('click', () => {
-        isVideoOff = !isVideoOff;
-        videoOffButton.textContent = isVideoOff ? 'Video On' : 'Video Off';
-        console.log('Video off:', isVideoOff);
-    });
-
-    shareScreenButton.addEventListener('click', () => {
-        console.log('Share screen clicked');
-        // Logic for getDisplayMedia would go here
-    });
-
-    stopButton.addEventListener('click', () => {
-        console.log('Stop button clicked');
-        appendMessage('You have disconnected.', 'system');
-        // Logic to close connection
-    });
 });
