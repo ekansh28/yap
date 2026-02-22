@@ -24,18 +24,44 @@ class ChatConsumer(AsyncWebsocketConsumer):
     # Receive message from WebSocket
     async def receive(self, text_data):
         text_data_json = json.loads(text_data)
-        message = text_data_json['message']
-        username = text_data_json.get('username', 'Anonymous') # capturing the username
+        message_type = text_data_json.get('type') # Getting the message type
 
-        # Send message to room group
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                'type': 'chat_message',
-                'message': message,
-                'username': username
-            }
+        if message_type == 'chat_message':
+            message = text_data_json['message']
+            username = text_data_json.get('username', 'Anonymous') # capturing the username
+
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'chat_message',
+                    'message' : message,
+                    'username' : username
+                }
+            )
+
+        elif message_type == 'webrtc_offer':
+            # fowarding the offer to the other peer
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'webrtc_offer',
+                    'sdp' : text_data_json['sdp'],
+                }
+            )
+
+        elif message_type == 'webrtc_ice_candidate':
+            # Forward the ICE Candidate to the other peer in the group
+            await self.channel_layer.group_send(
+                self.room_group_name,
+                {
+                    'type': 'webrtc_ice_candidate',
+                    'candidate' : text_data_json['candidate'],
+                }
         )
+            
+        else:
+            print(f"Unknown message type: {message_type}")
+
 
     # Receive message from room group
     async def chat_message(self, event):
@@ -44,6 +70,28 @@ class ChatConsumer(AsyncWebsocketConsumer):
 
         # Send message to WebSocket
         await self.send(text_data=json.dumps({
+            'type': 'chat_message', 
             'message': message,
             'username': username
+        }))
+    
+    # receive WebRTC offer from room group
+    async def webrtc_offer(self,event):
+        await self.send(text_data=json.dumps({
+            'type': 'webrtc_offer',
+            'sdp' : event['sdp'],
+        }))
+    
+    # receive WebRTC answer from room group
+    async def webrtc_answer(self, event):
+        await self.send(text_data=json.dumps({
+            'type' : 'webrtc_answer',
+            'sdp' : event['sdp'],
+        }))
+    
+    # receive WebRTC ICE Candidate from groom group
+    async def webrtc_ice_candidate(self,event):
+        await self.send(text_data=json.dumps({
+            'type' : 'webrtc_ice_candidate',
+            'candidate' : event['candidate'],
         }))

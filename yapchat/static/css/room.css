@@ -9,11 +9,33 @@ html, body{
 body {
     font-family: sans-serif;
     padding: 20px;
-    background-color: #c0c0c0; /* Windows 98 background color */
+    background-image: url('/static/image/bliss.jpg');
+    background-size: cover; /* This will make the image cover the entire background */
+    background-repeat: no-repeat;
+    background-position: center center;
+    background-attachment: fixed; /* Keeps the background fixed when scrolling */
     display: flex;
     justify-content: center; /* Center horizontally */
     align-items: center;     /* Center vertically */
     min-height: 100vh;
+}
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+.video-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 20px;
+}
+
+
+.video-wrapper video {
+    width: 100%;
+    height: auto;
+    display: block;
 }
 
 #chat-log {
