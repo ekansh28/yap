@@ -34,15 +34,15 @@
 
                 <div class="glass window active" style="max-width: 300px">
                     <div class="title-bar">
-                        <div class="title-bar-text">Stranger</div>
+                        <div id="remote-username-display" class="title-bar-text">Stranger</div>
                         <div class="title-bar-controls">
                         <button aria-label="Minimize"></button>
                         <button aria-label="Maximize"></button>
-                        <button aria-label="Close"></button>
+                        <button aria-label="Close" id="remote-video-close-button"></button>
                         </div>
                     </div>
                     <div class="window-body">
-                        <video id="remote-video" autoplay playsinline muted></video>
+                        <video id="remote-video" autoplay playsinline></video>
                     </div>
                 </div> 
 
@@ -59,8 +59,8 @@
     </div>
     <div class="window-body has-space">
         <!-- CHAT LOG -->
-        <textarea id="chat-log"></textarea><br/>
-        
+        <textarea id="chat-log"></textarea><div id="typing-indicator" style="display: none; color: gray; font-style: italic;"></div><br/>
+                    
         <div class="input-area">
             <input id="chat-message-input" type="text"/><br/>
             <input id="chat-message-submit" type="button" value="Send"/>
@@ -69,6 +69,7 @@
 
     </div>
 
-    <script type="text/javascript" src="{% static 'js/main.js' %}?v=5"></script>
+    <script type="module" src="{% static 'js/main.js' %}?v=5"></script>
+    <script type="module" src="{% static 'js/features/typingIndicator.js' %}?v=5"></script>
 </body>
 </html>

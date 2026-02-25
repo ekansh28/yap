@@ -61,3 +61,89 @@ body {
 #chat-message-submit {
   
 }
+
+/* Remote video close button — green themed */
+#remote-video-close-button {
+    /* Override ONLY this button's close background to green */
+    --w7-wct_close-bg:
+        radial-gradient(circle at -60% 50%, #0007 5% 10%, #0000 50%),
+        radial-gradient(circle at 160% 50%, #0007 5% 10%, #0000 50%),
+        linear-gradient(#b6f0b8e5, #5edc84 25% 50%, #2fbf5b 50%);
+
+    /* Your custom icon on top */
+    background-image:
+        url('/static/image/playing.png'),
+        var(--w7-wct-bg),
+        var(--w7-wct_close-bg);
+
+    background-repeat: no-repeat, no-repeat, no-repeat;
+    background-position: center, center, center;
+    background-size: 35%, auto, auto; /* Changed from contain */
+
+    /* Keep the Windows 7 shadow */
+    box-shadow: var(--w7-wct-sd);
+
+    /* Recommended safety */
+    background-blend-mode: normal;
+
+    /* Ensure button is visible (adjust if already set) */
+    width: 16px;
+    height: 16px;
+}
+
+/* Visual layer */
+#remote-video-close-button::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: var(--w7-wct-bdr);
+
+    background:
+        url('/static/image/playing.png') no-repeat 50%,
+        var(--w7-wct-bg),
+
+        /* stronger inner glow */
+        radial-gradient(circle at 50% 170%, #baff9e 8% 22%, #0000 60%),
+
+        /* edge shading (kept for depth) */
+        radial-gradient(circle at -60% 50%, #000a 5% 10%, #0000 50%),
+        radial-gradient(circle at 160% 50%, #000a 5% 10%, #0000 50%),
+
+        /* more vibrant green body */
+        linear-gradient(#c8ffc9, #39e06f 30% 55%, #12b24a 60%);
+
+    background-size: 35%, auto, auto, auto, auto, auto; /* Changed from contain */
+    background-repeat: no-repeat, no-repeat, no-repeat, no-repeat, no-repeat, no-repeat;
+    background-position: center, center, center, center, center, center;
+
+    box-shadow:
+        var(--w7-wct-sd),
+        0 0 6px #39e06f88; 
+
+    background-blend-mode: normal;
+    pointer-events: none;
+}
+
+/* Muted state */
+#remote-video-close-button.is-muted {
+    background:
+        url('/static/image/muted.png') no-repeat center center,
+        var(--w7-wct-bg),
+        var(--w7-wct_close-bg) !important;
+
+    background-size: 35%, auto, auto !important;
+}
+
+/* Icon layer */
+#remote-video-close-button.is-muted::before {
+    background:
+        url('/static/image/muted.png') no-repeat center center,
+        var(--w7-wct-bg),
+        radial-gradient(circle at 50% 170%, #f77b7b 8% 22%, #0000 60%),
+        radial-gradient(circle at -60% 50%, #000a 5% 10%, #0000 50%),
+        radial-gradient(circle at 160% 50%, #000a 5% 10%, #0000 50%),
+        linear-gradient(#f0c9c9, #d36a6a 30% 55%, #b84f4f 60%) !important;
+
+    background-size: 35%, auto, auto, auto, auto, auto !important;
+    box-shadow: var(--w7-wct-sd), 0 0 6px #d36a6a88 !important;
+}
