@@ -7,6 +7,12 @@
     <title>Chat Room</title>
     <link rel="stylesheet" href="https://unpkg.com/7.css">
     <link rel="stylesheet" href="{% static 'css/room.css' %}?v=1">
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+
 </head>
 <body>
     <div class="container">
@@ -23,7 +29,9 @@
                         </div>
                     </div>
                     <div class="window-body">
-                        <video id="local-video" autoplay playsinline muted></video>
+                        <!-- We cannot use display:none or the browser stops processing the camera feed -->
+                        <video id="local-video" autoplay playsinline muted style="position: absolute; opacity: 0; pointer-events: none;"></video>
+                        <canvas id="local-canvas" width="640" height="480" style="width: 100%; height: auto;"></canvas>
                     </div>
                 </div>  
 

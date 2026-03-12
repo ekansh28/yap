@@ -1,9 +1,12 @@
 import { initSenderTypingDetection, handleTypingStart, handleTypingStop, stopTypingImmediately } from './features/typingIndicator.js';
+import { VideoEffectProcessor } from './features/videoProcessor.js';
+import { GestureDetector } from './features/gestureDetector.js';
 
 document.addEventListener('DOMContentLoaded', () => {
     // DOM ELEMENTS
     const roomName = JSON.parse(document.getElementById('room-name').textContent);
     const localVideo = document.getElementById('local-video');
+    const localCanvas = document.getElementById('local-canvas');
     const remoteVideo = document.getElementById('remote-video');
     const chatLog = document.querySelector("#chat-log");
     const messageInput = document.querySelector("#chat-message-input");   
@@ -198,16 +201,42 @@ document.addEventListener('DOMContentLoaded', () => {
     navigator.mediaDevices.getUserMedia({video:true,audio:true,})
         .then(stream => {
             // Storing the Stream into localStream to use it for the peer connection
-            localStream = stream
+            localStream = stream;
             // Attaching the stream to the local-video element to display it
             localVideo.srcObject = stream;
-            
+            // Extremely important: play the raw video so MediaPipe can pull frames from it
+            localVideo.play().catch(e => console.error("Error playing local video:", e));
+
+            // Setup the background blur processor
+            const videoProcessor = new VideoEffectProcessor(localVideo, localCanvas);
+            videoProcessor.start();
+
+            // Setup the gesture detector for emojis
+            const gestureDetector = new GestureDetector(localVideo, (emoji) => {
+                if (chatSocket.readyState === WebSocket.OPEN) {
+                    chatSocket.send(JSON.stringify({
+                        'type': 'chat_message', 
+                        'message': emoji,
+                        'username' : user_name
+                    }));
+                }
+            });
+            gestureDetector.start();
+
+            // Extract the blurred stream from the canvas
+            const processedStream = localCanvas.captureStream(30);
+
+            // Combine the blurred video track with the original audio track
+            const combinedStream = new MediaStream();
+            combinedStream.addTrack(processedStream.getVideoTracks()[0]);
+            localStream.getAudioTracks().forEach(track => combinedStream.addTrack(track));
+
             // Initialize peerconnection only ONCE after the local stream is ready.
             peerConnection = new RTCPeerConnection(stunServers);
 
             // Adding local tracks to this peerconnection
-            localStream.getTracks().forEach(track => {
-                peerConnection.addTrack(track, localStream);
+            combinedStream.getTracks().forEach(track => {
+                peerConnection.addTrack(track, combinedStream);
             });
 
             // Setting up an event handler for receiving remote tracks
