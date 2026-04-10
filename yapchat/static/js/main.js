@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', () => {
     let iceCandidatesQueue = []; 
     let remoteUsernameDisplay = document.getElementById('remote-username-display'); 
     let isMuted = false;
+    let currentOpenMenu = null;
+    
     const muteToggleButton = document.getElementById('remote-video-close-button');
     const skipButton = document.getElementById('skip-button');
 
@@ -73,8 +75,22 @@ document.addEventListener('DOMContentLoaded', () => {
         // Differentiating between Chat Messages and WebRTC Signaling
         if (data.type == 'chat_message') {
             // ^^ This is conditional executes if the data is a message 
+
             const sender = data.username ? data.username : "Stranger";
-            chatLog.value += (sender + ": " + data.message + "\n");
+            const messageText = data.message;
+
+            if (sender === user_name){
+                return;
+            }
+            
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-message-item');
+
+            messageElement.innerHTML = `
+                <span class="message-content">${sender}: ${messageText}</span>
+                <span class="message-options-button">&#x22EE;</span>
+            `
+            chatLog.appendChild(messageElement);
             chatLog.scrollTop = chatLog.scrollHeight;
 
         } else if (data.type == 'webrtc_offer'){
@@ -377,6 +393,15 @@ document.addEventListener('DOMContentLoaded', () => {
                 'message': message,
                 'username' : user_name
             }));
+            
+            // creating div element for messsages
+            const messageElement = document.createElement('div');
+            messageElement.classList.add('chat-message-item', 'self-sent');
+            messageElement.innerHTML = `
+            <span class="message-content">You: ${message}</span>
+            <span class="message-options-button">&#x22EE;</span>
+            `;
+            chatLog.appendChild(messageElement);
             messageInput.value = '';
             chatLog.scrollTop = chatLog.scrollHeight;
 
@@ -384,6 +409,108 @@ document.addEventListener('DOMContentLoaded', () => {
             stopTypingImmediately(chatSocket, user_name);
         };
     }
+
+    // --- Add Event Listener for Message Options Button Clicks ---
+    chatLog.addEventListener('click', (e) => {
+        // Check if the clicked element (or its parent) is the message-options-button
+        const optionsButton = e.target.closest('.message-options-button');
+        if (optionsButton) {
+            e.stopPropagation(); // Prevent event from bubbling up further
+
+            const messageElement = optionsButton.closest('.chat-message-item');
+            if (messageElement) {
+                displayMessageOptionsMenu(optionsButton, messageElement);
+            }
+        }
+    });
+
+    // --- Placeholder for the menu display function ---
+    function displayMessageOptionsMenu(clickedButton, messageElement) {
+        // Close any other open menu first
+        if (currentOpenMenu) {
+            currentOpenMenu.remove();
+            currentOpenMenu = null;
+        }
+
+        const menu = document.createElement('div');
+        menu.classList.add('message-options-menu'); // For CSS styling
+        
+        // Create the translate icon button
+        const translateOption = document.createElement('img');
+        translateOption.src = '/static/image/translate-icon.png'; // Make sure this path is correct
+        translateOption.classList.add('menu-icon'); // For CSS styling
+        translateOption.alt = 'Translate';
+        translateOption.title = 'Translate Message';
+        
+        // Add click listener for the translate icon
+            // Inside displayMessageOptionsMenu in main.js
+    translateOption.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        closeMenu();
+
+        const originalMessageSpan = messageElement.querySelector('.message-content');
+        const fullText = originalMessageSpan.textContent;
+
+        // Split "Username: Message" and take only the message part
+        const parts = fullText.split(': ');
+        const username = parts[0];
+        const textToTranslate = parts.slice(1).join(': '); // Handles cases where the message has colons
+
+        originalMessageSpan.textContent = "Translating...";
+
+        try {
+            const response = await fetch('/chat/translate-message/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken'),
+                },
+                body: JSON.stringify({ message_text: textToTranslate }), // Send only the message text
+            });
+
+            if (response.ok) {
+                const data = await response.json();
+                if (data.status === 'success') {
+                    // Reconstruct the string with the original username
+                    originalMessageSpan.textContent = `${username}: ${data.translated_text}`;
+                }
+            }
+        } catch (error) {
+            console.error("Translation error:", error);
+        }
+    });
+
+        menu.appendChild(translateOption);
+        
+        // Position the menu
+        const buttonRect = clickedButton.getBoundingClientRect();
+        
+        // Append to body first to calculate its size correctly
+        document.body.appendChild(menu);
+
+        const menuRect = menu.getBoundingClientRect();
+
+        // Position above the button, horizontally centered with the button or to its right
+        // Adjust these values as needed for precise positioning
+        menu.style.position = 'absolute';
+        menu.style.left = `${buttonRect.right - menuRect.width}px`; // Align right edge of menu with right edge of button
+        menu.style.top = `${buttonRect.top - menuRect.height - 5}px`; // 5px above the button
+        
+        currentOpenMenu = menu; // Store reference to the open menu
+
+        // Close menu if user clicks anywhere else on the document
+        document.addEventListener('click', closeMenu);
+    }
+
+    // Helper function to close the menu
+    function closeMenu() {
+        if (currentOpenMenu) {
+            currentOpenMenu.remove();
+            currentOpenMenu = null;
+            document.removeEventListener('click', closeMenu); // Remove listener to prevent memory leaks
+        }
+    }
+
 
 
 });
