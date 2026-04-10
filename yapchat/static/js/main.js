@@ -1,5 +1,19 @@
 import { initSenderTypingDetection, handleTypingStart, handleTypingStop, stopTypingImmediately } from './features/typingIndicator.js';
 
+function getCookie(name) {
+    let cookieValue = null;
+    if(document.cookie && document.cookie !== ''){
+        const cookies = document.cookie.split(';');
+        for(let i= 0; i < cookies.length; i++){
+            const cookie = cookies[i].trim();
+            if(cookie.substring(0,name.length + 1) === (name + '=')) {
+                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                break;
+            }
+        }
+    }
+    return cookieValue;
+}
 document.addEventListener('DOMContentLoaded', () => {
     // DOM ELEMENTS
     const roomName = JSON.parse(document.getElementById('room-name').textContent);
@@ -15,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     let remoteUsernameDisplay = document.getElementById('remote-username-display'); 
     let isMuted = false;
     const muteToggleButton = document.getElementById('remote-video-close-button');
+    const skipButton = document.getElementById('skip-button');
 
     const user_name = localStorage.getItem('chat_username') || 'Anonymous';
     console.log("Retrieved username from storage:", user_name);
@@ -52,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
     // Handle Incoming Messages
-    chatSocket.onmessage = function(e) {
+    chatSocket.onmessage = async function(e) {
         const data = JSON.parse(e.data);
         
         // Differentiating between Chat Messages and WebRTC Signaling
@@ -86,6 +101,17 @@ document.addEventListener('DOMContentLoaded', () => {
             handleTypingStart(data.username);
         } else if (data.type == 'typing_stop'){
             handleTypingStop();
+        } else if (data.type == 'partner_left'){
+            console.log("Partner left signal received:", data.message);
+            chatLog.value += (data.message + "\n");
+            chatLog.scrollTop = chatLog.scrollHeight;
+
+            const randomDelay = Math.floor(Math.random() * 2000) + 500;
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            cleanupAndClose();
+            
+            window.location.href = '/chat/new-room-request/';
         } else {
             console.log("Unknown Message Type:", data.type);
         }
@@ -124,10 +150,72 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
+    if(skipButton) {
+        skipButton.addEventListener('click', async () => {
+            console.log("Skipped User");
+            chatLog.value += ("You have disconnected from your partner. Finding a new one...\n");
+            chatLog.scrollTop = chatLog.scrollHeight;
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Wait 1.5 seconds
+
+            // Making a request to the backend to delete messages for the current room
+            try {
+                const response = await fetch(`/chat/delete-messages/${roomName}/`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type' : 'application/json',
+                        'X-CSRFToken': getCookie('csrftoken')
+                        // if we get 403 forbidden error then we need to add a csrf token for protection to get a getcookie function
+                    },
+
+                });
+
+                const data = await response.json();
+                if (response.ok) {
+                    console.log(data.message);
+                } else {
+                    console.error("Error deleting messages:", data.message);
+                } 
+            } catch (error) {
+                console.error("Network Error while deleting Messages :", error);
+            }
+
+            // Clean up local connections
+            cleanupAndClose();
+
+            // Redirect to a new, empty lobby
+            window.location.href = '/chat/new-room-request/';
+        })
+    }
 
 
 
 
+    function cleanupAndClose(){
+        console.log('Cleaning up and closing connections..')
+
+        // close the peer connection if exists
+        if (peerConnection) {
+            peerConnection.close();
+            peerConnection = null;
+        }
+
+        // close websocket connection
+        if (chatSocket){
+            chatSocket.onclose = null;
+            chatSocket.close();
+        }
+
+        // Reset Video Elements
+        if (remoteVideo && remoteVideo.srcObject) {
+            remoteVideo.srcObject.getTracks().forEach(track => track.stop());
+            remoteVideo.srcObject = null;
+        }
+        
+        // Clear Chat Log
+        if (chatLog) {
+            chatLog.value = '';
+        }
+    }
     // Offer/Answer Handlers
     function createOffer(){
         console.log("Creating Offer...");

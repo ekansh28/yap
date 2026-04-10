@@ -49,16 +49,7 @@
             localStorage.setItem('chat_username', userName);
 
             // Asking Backend for Room Assignment
-            fetch('/chat/join-lobby/')
-
-            // parsing the status code response into json
-             .then(response => response.json())
-             .then(data => {
-                window.location.pathname = '/chat/' + data.room_name + '/';
-             })
-             .catch(error =>{
-                console.error('Error : ', error)
-             })
+            window.location.href = '/chat/join-lobby/'
 
         
         };
