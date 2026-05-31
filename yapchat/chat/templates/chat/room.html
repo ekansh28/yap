@@ -7,9 +7,11 @@
     <title>Chat Room</title>
     <meta name="google" content="notranslate" />
     <meta name="csrf-token" content="{{ csrf_token }}"> 
-    <link rel="stylesheet" href="https://unpkg.com/7.css">
+    <link rel="stylesheet" href="https://unpkg.com/98.css">
     <link rel="stylesheet" href="{% static 'css/room.css' %}?v=1">
 </head>
+{% load django_browser_reload %}
+{% django_browser_reload_script %}
 <body>
     <div class="container">
         <div class="video-container">

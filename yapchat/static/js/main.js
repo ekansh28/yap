@@ -434,53 +434,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const menu = document.createElement('div');
         menu.classList.add('message-options-menu'); // For CSS styling
-        
-        // Create the translate icon button
-        const translateOption = document.createElement('img');
-        translateOption.src = '/static/image/translate-icon.png'; // Make sure this path is correct
-        translateOption.classList.add('menu-icon'); // For CSS styling
-        translateOption.alt = 'Translate';
-        translateOption.title = 'Translate Message';
-        
-        // Add click listener for the translate icon
-            // Inside displayMessageOptionsMenu in main.js
-    translateOption.addEventListener('click', async (e) => {
-        e.stopPropagation();
-        closeMenu();
 
-        const originalMessageSpan = messageElement.querySelector('.message-content');
-        const fullText = originalMessageSpan.textContent;
-
-        // Split "Username: Message" and take only the message part
-        const parts = fullText.split(': ');
-        const username = parts[0];
-        const textToTranslate = parts.slice(1).join(': '); // Handles cases where the message has colons
-
-        originalMessageSpan.textContent = "Translating...";
-
-        try {
-            const response = await fetch('/chat/translate-message/', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRFToken': getCookie('csrftoken'),
-                },
-                body: JSON.stringify({ message_text: textToTranslate }), // Send only the message text
-            });
-
-            if (response.ok) {
-                const data = await response.json();
-                if (data.status === 'success') {
-                    // Reconstruct the string with the original username
-                    originalMessageSpan.textContent = `${username}: ${data.translated_text}`;
-                }
-            }
-        } catch (error) {
-            console.error("Translation error:", error);
-        }
-    });
-
-        menu.appendChild(translateOption);
         
         // Position the menu
         const buttonRect = clickedButton.getBoundingClientRect();

@@ -5,7 +5,7 @@ html, body {
 }
 
 body {
-    background-color: #c0c0c0; /* Windows 98 background color */
+    background-color: #008081; /* Windows 98 background color */
     display: flex;
     justify-content: center; /* Center horizontally */
     align-items: center;     /* Center vertically */
@@ -15,4 +15,83 @@ body {
 .window {
     flex-shrink: 0;
     /* You might need to add max-width and max-height if the content is too large */
+}
+
+
+
+
+
+/* 
+░██████████   ░███      ░██████    ░██████   
+    ░██      ░██░██    ░██   ░██  ░██   ░██  
+    ░██     ░██  ░██  ░██        ░██         
+    ░██    ░█████████ ░██  █████  ░████████  
+    ░██    ░██    ░██ ░██     ██         ░██ 
+    ░██    ░██    ░██  ░██  ░███  ░██   ░██  
+    ░██    ░██    ░██   ░█████░█   ░██████   
+                                                                                                                    
+*/
+#tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 3px;
+
+    width: 100%;
+    min-height: 21px;
+
+    background-color: #fff;
+
+    /* Exact 98.css textbox border */
+    box-shadow:
+        inset -1px -1px #fff,
+        inset 1px 1px grey,
+        inset -2px -2px #dfdfdf,
+        inset 2px 2px #0a0a0a;
+
+    box-sizing: border-box;
+
+    padding: 3px 4px;
+
+    margin-bottom: 10px;
+}
+
+#tags-input {
+    flex: 1;
+
+    min-width: 40px;
+
+    border: none !important;
+    outline: none !important;
+
+    background: transparent !important;
+    box-shadow: none !important;
+
+    padding: 0;
+    margin: 0;
+
+    height: auto;
+
+    font-family: "Pixelated MS Sans Serif", Arial;
+    font-size: 11px;
+}
+
+#tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+}
+
+.tag {
+    display: flex;
+    align-items: center;
+
+    padding: 1px 4px;
+
+    background: rgba(192, 192, 192, 0.219);
+
+    border-top: 1px solid white;
+    border-left: 1px solid white;
+    border-right: 1px solid #555;
+    border-bottom: 1px solid #555;
 }

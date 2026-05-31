@@ -4,15 +4,18 @@
 <html>
 <head>
     <meta charset="utf-8"/>
-    <link rel="stylesheet" href="https://unpkg.com/7.css">
+    <link rel="stylesheet" href="https://unpkg.com/98.css">
 
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'js/Components/Notification/Notification.css' %}">
     <title>Chat Rooms</title>
 </head>
+{% load django_browser_reload %}
+{% django_browser_reload_script %}
 <body>
      <div class="window" style="width: 300px">
        <div class="title-bar">
-         <div class="title-bar-text">Chat Entry</div>
+         <div class="title-bar-text">hi ballscord</div>
          <div class="title-bar-controls">
            <button aria-label="Minimize"></button>
            <button aria-label="Maximize"></button>
@@ -20,13 +23,25 @@
          </div>
        </div>
       <div class="window-body has-space">
-        <p>enter your username</p>
-        <input id="user-name-input" type="text" style="width: 100%"><br><br>
-        <input id="user-name-submit" type="button" value="Enter">
+      
+        <p>enter tags (comma-separated)</p>
+        <div id="tags-container">
+        <input
+            id="tags-input"
+            type="text"
+            autocomplete="off"
+            autocorrect="off"
+            autocapitalize="off"
+            spellcheck="false"
+            placeholder="music, gaming, tech">
+    </div>
+       
+        <button>Text Chat</button>
+        <button>Video Chat</button>
       </div>
     </div>
 
-
+    <script type="module" src="{% static 'js/LandingPage/main.js' %}"></script>
     <script>
         document.querySelector('#user-name-input').focus();
         document.querySelector('#user-name-input').onkeyup = function(e) {
@@ -54,5 +69,7 @@
         
         };
     </script>
+
+
 </body>
 </html>

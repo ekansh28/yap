@@ -3,7 +3,6 @@ from django.http import JsonResponse, HttpResponseRedirect
 from .models import Room, Message
 import uuid
 from django.db import transaction, models
-from googletrans import Translator
 import json
 from django.views.decorators.csrf import csrf_exempt
 import asyncio
@@ -80,18 +79,3 @@ def create_and_join_new_room(request):
     
     return HttpResponseRedirect(f"/chat/{room_name_to_return}/")
 
-async def _translate_to_english(text_to_translate):
-    try:
-        translator = Translator()
-        # Use await because it is a coroutine
-        translated = await translator.translate(text_to_translate, dest='en')
-        return translated.text
-    except Exception as e:
-        return f"Translation Error: {e}"
-
-async def translate_message_view(request):
-    if request.method == 'POST':
-        data = json.loads(request.body)
-        # Call the async helper with await
-        translated = await _translate_to_english(data.get('message_text', ''))
-        return JsonResponse({'status': 'success', 'translated_text': translated})
