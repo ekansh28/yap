@@ -59,8 +59,7 @@ YapChat is a real-time chat application built with Django that allows users to a
     python manage.py runserver
     ```
 
-4.  **Access the App:**
-    Open your browser and navigate to `http://127.0.0.1:8000/`.
+
 
 ## Usage
 1.  Enter a username on the home page.
