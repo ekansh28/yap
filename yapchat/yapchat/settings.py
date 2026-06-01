@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'channels',
     "django_browser_reload",
+    'accounts',
 ]
 
 MIDDLEWARE = [
@@ -89,7 +90,7 @@ WSGI_APPLICATION = 'yapchat.wsgi.application'
 # mysite/settings.py
 DATABASES = {
     "default": dj_database_url.config(
-    default=os.environ.get('DATABASE_URL'),
+    default='postgresql://postgres.axsgujztyebpophnompt:npg_Kl2nZyFIAgE4@aws-1-us-east-2.pooler.supabase.com:5432/postgres',
     conn_max_age=600,
     ssl_require=True
     )
@@ -144,3 +145,8 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+
+# Tell Django to use our custom user model instead of auth.User
+# Use accounts.User instead
+AUTH_USER_MODEL = "accounts.User"

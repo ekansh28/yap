@@ -8,19 +8,24 @@
 
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
     <link rel="stylesheet" href="{% static 'js/Components/Notification/Notification.css' %}">
+     <link rel="stylesheet" href="{% static 'accounts/css/auth_modal.css' %}">
     <title>Chat Rooms</title>
 </head>
 {% load django_browser_reload %}
 {% django_browser_reload_script %}
 <body>
+
+    <div id="top-bar">
+        <div class="title-bar-text"></div>
+
+        <button id= "auth-button" class="auth-button"> Login/Signup</button>
+         {% include "accounts/components/auth_modal.html" %}
+    </div>
+     
      <div class="window" style="width: 300px">
        <div class="title-bar">
-         <div class="title-bar-text">hi ballscord</div>
-         <div class="title-bar-controls">
-           <button aria-label="Minimize"></button>
-           <button aria-label="Maximize"></button>
-           <button aria-label="Close"></button>
-         </div>
+        
+            
        </div>
       <div class="window-body has-space">
       
@@ -35,40 +40,19 @@
             spellcheck="false"
             placeholder="music, gaming, tech">
     </div>
-       
-        <button>Text Chat</button>
-        <button>Video Chat</button>
+
+
+       <div id="ButtonContainer">
+        <button id="text-chat-button">Text Chat</button>
+        <button id="video-chat-button">Video Chat</button>
+        </div>
+
+
       </div>
     </div>
 
     <script type="module" src="{% static 'js/LandingPage/main.js' %}"></script>
-    <script>
-        document.querySelector('#user-name-input').focus();
-        document.querySelector('#user-name-input').onkeyup = function(e) {
-            if (e.key === 'Enter') {  // enter, return
-                document.querySelector('#user-name-submit').click();
-            }
-        };
-
-        document.querySelector('#user-name-submit').onclick = function(e) {
-            var userNameInput = document.querySelector('#user-name-input');
-            var userName = userNameInput.value.trim();
-            console.log("Capturing username:", userName);
-
-            if (!userName) {
-                alert("Please enter a username");
-                return;
-            }
-            
-            // 1. Save the username to LocalStorage so we can use it in the chat room
-            localStorage.setItem('chat_username', userName);
-
-            // Asking Backend for Room Assignment
-            window.location.href = '/chat/join-lobby/'
-
-        
-        };
-    </script>
+    <script src="{% static 'accounts/js/auth_modal.js' %}"></script>
 
 
 </body>
