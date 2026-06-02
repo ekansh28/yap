@@ -1,67 +1,288 @@
 # YapChat
 
-YapChat is a real-time chat application built with Django that allows users to anonymously connect with strangers. It features an automated matchmaking system similar to Omegle, where users are paired into private chat rooms.
+YapChat is a Django + Channels chat app for matching strangers into private rooms for real-time text chat and WebRTC video chat. The UI currently uses a Windows 98-inspired style through `98.css`, with a newer authentication modal prototype being built into the landing page.
 
-## Technologies Used
+## Current State
 
-*   **Django (v6.0.2):** The core web framework used for handling HTTP requests, routing, and database interactions.
-*   **Django Channels:** Extends Django to handle WebSockets, allowing for real-time, bidirectional communication between the client and server.
-*   **ASGI (Asynchronous Server Gateway Interface):** Used via `daphne` to serve the application, enabling asynchronous capabilities required for WebSockets.
-*   **WebSockets:** The protocol used for the chat functionality, ensuring instant message delivery without page reloads.
-*   **Vanilla JavaScript:** Handles the frontend logic for connecting to WebSockets and DOM manipulation.
-*   **98.css:** A Windows 98 inspired CSS framework for the retro UI design.
+This repo is an active prototype. The main working areas are:
 
-## Current Features
+- Stranger matchmaking into two-person chat rooms.
+- WebSocket text messaging with saved message history.
+- WebRTC video signaling over the same room WebSocket.
+- Typing indicators.
+- Partner disconnect / skip flow.
+- A custom `accounts.User` model and `Profile` model.
+- A registration/sign-in modal prototype with email, display name, username, password, date of birth, and OAuth-style buttons.
 
-### 1. Automated Matchmaking (Lobby System)
-*   **Logic:** Users do not manually create rooms. The server automatically handles room assignment.
-*   **Waiting Room:** When a user clicks "Enter", the server checks for an existing room with a `waiting` status (partially full).
-*   **Room Creation:** If no waiting rooms exist, the server creates a new room with a unique ID and assigns the user to it.
-*   **Room Filling:** If a waiting room is found, the user joins it, and the room status is updated to `full`.
+## Tech Stack
 
-### 2. Real-Time Chat
-*   **WebSocket Connection:** Upon entering a room, a WebSocket connection is established.
-*   **Instant Messaging:** Messages sent by one user are instantly broadcast to the other user in the room via the Django Channels group layer.
-*   **Username Persistence:** Usernames are temporarily stored in `localStorage` to identify senders within the session.
+- Django 6
+- Django Channels
+- Daphne / ASGI
+- Redis channel layer through Upstash-compatible `rediss://`
+- PostgreSQL, currently configured through `dj-database-url`
+- Supabase Postgres-compatible database setup
+- WhiteNoise for static files
+- `django-browser-reload` for development refreshes
+- Vanilla JavaScript
+- WebSockets
+- WebRTC
+- 98.css
 
-### 3. Retro UI
-*   The interface is styled to resemble a Windows 98 application window, providing a nostalgic user experience.
+## Features
+
+### Landing Page
+
+The landing page lives at `chat/templates/chat/main.html`.
+
+It includes:
+
+- Login / Signup button.
+- Auth modal component from `accounts/templates/accounts/components/auth_modal.html`.
+- Tag input UI for interests.
+- Text Chat and Video Chat entry buttons.
+
+### Auth Modal Prototype
+
+The auth modal currently includes:
+
+- Email field with required validation.
+- Display name field with a character counter.
+- Username field with:
+  - `0/32` counter.
+  - allowed-character guidance.
+  - minimum length validation.
+  - animated helper text.
+- Password field with required and minimum length validation.
+- Date of birth dropdowns for day, month, and year.
+- Hidden DOB value formatted as `YYYY-MM-DD`.
+- Required warning icons using `warning.png`.
+- Discord and Google OAuth-style buttons with logo placeholders/images.
+- Fade, slide, and shake feedback animations.
+
+The frontend files are:
+
+- `yapchat/accounts/templates/accounts/components/auth_modal.html`
+- `yapchat/accounts/static/accounts/css/auth_modal.css`
+- `yapchat/accounts/static/accounts/js/auth_modal.js`
+
+### Chat Rooms
+
+The chat app automatically matches users into rooms with a capacity of 2.
+
+The room flow is:
+
+- `join_lobby` looks for a waiting room.
+- If one exists, the user joins it.
+- If none exists, a new room is created with a short UUID-based name.
+- Rooms track `current_users`, `capacity`, and `isFull`.
+- Empty rooms are cleaned up on disconnect.
+
+### Real-Time Chat
+
+Room messages are sent over WebSockets using Django Channels.
+
+The app currently supports:
+
+- Sending and receiving text messages.
+- Saving messages to the database.
+- Loading recent message history on connect.
+- Sender-side display for your own messages.
+- Partner-left events.
+- Typing start / stop events.
+
+### Video Chat
+
+The room page includes local and remote video windows.
+
+WebRTC signaling messages are routed through the room WebSocket:
+
+- `webrtc_offer`
+- `webrtc_answer`
+- `webrtc_ice_candidate`
+
+The client currently uses a Google STUN server:
+
+```js
+stun:stun.l.google.com:19302
+```
 
 ## Project Structure
 
-*   `yapchat/`: The main project configuration directory.
-    *   `asgi.py`: Entry point for the ASGI server, routing both HTTP and WebSocket traffic.
-    *   `settings.py`: Configuration for Django and Channels.
-    *   `urls.py`: Main URL routing.
-*   `chat/`: The main application app.
-    *   `consumers.py`: Handles WebSocket events (connect, receive, disconnect) and message broadcasting.
-    *   `models.py`: Defines the `Room` model for tracking room status.
-    *   `routing.py`: Maps WebSocket URLs to consumers.
-    *   `views.py`: Handles HTTP views for the index page and matchmaking logic (`join_lobby`).
-    *   `templates/chat/`: Contains `main.html` (entry) and `room.html` (chat interface).
-*   `static/`: Contains CSS and JavaScript files.
+```text
+yap/
+|-- README.md
+|-- package.json
+|-- package-lock.json
+`-- yapchat/
+    |-- manage.py
+    |-- accounts/
+    |   |-- models.py
+    |   |-- signals.py
+    |   |-- migrations/
+    |   |-- static/accounts/
+    |   |   |-- css/auth_modal.css
+    |   |   |-- js/auth_modal.js
+    |   |   `-- images/
+    |   `-- templates/accounts/components/auth_modal.html
+    |-- chat/
+    |   |-- consumers.py
+    |   |-- models.py
+    |   |-- routing.py
+    |   |-- urls.py
+    |   |-- views.py
+    |   `-- templates/chat/
+    |       |-- main.html
+    |       `-- room.html
+    |-- static/
+    |   |-- css/
+    |   `-- js/
+    `-- yapchat/
+        |-- asgi.py
+        |-- settings.py
+        |-- urls.py
+        `-- wsgi.py
+```
 
-## How to Run
+## Data Models
 
-1.  **Install Dependencies:**
-    ```bash
-    pip install django channels daphne
-    ```
+### `accounts.User`
 
-2.  **Apply Migrations:**
-    ```bash
-    python manage.py makemigrations
-    python manage.py migrate
-    ```
+Custom user model extending Django `AbstractUser`.
 
-3.  **Run the Server:**
-    ```bash
-    python manage.py runserver
-    ```
+Current extra fields:
 
+- `email`
+- `email_verified`
+- `date_of_birth`
+- `created_at`
+- `updated_at`
 
+### `accounts.Profile`
 
-## Usage
-1.  Enter a username on the home page.
-2.  Click "Enter" to get automatically matched into a room.
-3.  Chat with the connected stranger!
+User profile model with:
+
+- `display_name`
+- `bio`
+- `avatar_key`
+- `banner_key`
+- `status_preference`
+- timestamps
+
+### `chat.Room`
+
+Tracks matchmaking room state:
+
+- `name`
+- `capacity`
+- `isFull`
+- `current_users`
+
+### `chat.Message`
+
+Stores chat history:
+
+- `room`
+- `content`
+- `sender`
+- `timestamp`
+
+## Local Setup
+
+From the repo root:
+
+```powershell
+cd yapchat
+```
+
+Create and activate a virtual environment if needed:
+
+```powershell
+python -m venv ..\.venv
+..\.venv\Scripts\Activate.ps1
+```
+
+Install the Python dependencies used by the current codebase:
+
+```powershell
+pip install django channels daphne channels-redis dj-database-url python-dotenv whitenoise django-browser-reload psycopg
+```
+
+Install Node dependencies if you are working with the existing package setup:
+
+```powershell
+cd ..
+npm install
+cd yapchat
+```
+
+Apply migrations:
+
+```powershell
+python manage.py makemigrations
+python manage.py migrate
+```
+
+Run the dev server:
+
+```powershell
+python manage.py runserver
+```
+
+Then open:
+
+```text
+http://127.0.0.1:8000/
+```
+
+## Environment Notes
+
+The app currently expects a PostgreSQL-compatible database and a Redis-compatible Channels layer.
+
+Recommended `.env` values:
+
+```env
+DATABASE_URL=postgresql://USER:PASSWORD@HOST:PORT/DBNAME
+REDIS_URL=rediss://USER:PASSWORD@HOST:PORT
+```
+
+The current `settings.py` uses `dj_database_url` and a configured Channels Redis layer. For production or shared development, secrets should live in `.env` instead of being committed directly in settings.
+
+## Useful Commands
+
+Check the Django project:
+
+```powershell
+python manage.py check
+```
+
+Create migrations:
+
+```powershell
+python manage.py makemigrations
+```
+
+Apply migrations:
+
+```powershell
+python manage.py migrate
+```
+
+Run the server:
+
+```powershell
+python manage.py runserver
+```
+
+Check the auth modal JavaScript syntax:
+
+```powershell
+node --check yapchat\accounts\static\accounts\js\auth_modal.js
+```
+
+## Current Caveats
+
+- The auth modal is currently a frontend prototype. Backend registration/login/OAuth handling still needs to be connected.
+- The README does not list pinned Python package versions because there is no committed `requirements.txt` yet.
+- Secrets and connection strings should be moved fully into environment variables before production use.
+- WebRTC behavior depends on browser permissions, network conditions, and STUN/TURN availability.
