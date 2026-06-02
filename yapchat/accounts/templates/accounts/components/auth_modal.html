@@ -11,11 +11,12 @@
   </div>
   <div class="window-body">
 <!-- Registration Form -->
+    <div id="registration-state" class="auth-state is-active">
     <!-- Email Field -->
       <p>Email<span class="required-marker" aria-hidden="true">*</span><span id="email-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></p>
       <div class="auth-input-wrapper no-counter">
         <input
-        id="email-input"
+        id="email-input" 
         type="email"
         autocomplete="off"
         autocorrect="off"
@@ -24,7 +25,7 @@
         >
       </div>
       <p id="email-help" class="email-help" aria-live="polite">
-            Please enter your email
+            Please enter your email 
         </p>
 
     <!-- Display Name Field -->
@@ -116,6 +117,8 @@
         </button>
       </div>
 
+    </div>
+    {% include "accounts/components/verify_email.html" %}
 
   </div>
 </div>

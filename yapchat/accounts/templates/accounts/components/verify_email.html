@@ -1,0 +1,50 @@
+{% load static %}
+
+<div id="verify-email-state" class="auth-state">
+    <p>We've sent a 6-digit verification code to:</p>
+    <div id="verify-email-address" class="verify-email-address">
+        email@example.com
+    </div>
+
+    <p>Enter the code below to verify your email.</p>
+
+    <p>Verification Code<span class="required-marker" aria-hidden="true">*</span><span id="verification-code-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></p>
+    <div class="verification-code-wrapper" aria-label="Verification code">
+        <input class="verification-code-input" type="text" maxlength="1" inputmode="numeric" autocomplete="one-time-code" aria-label="Verification code digit 1">
+        <input class="verification-code-input" type="text" maxlength="1" inputmode="numeric" aria-label="Verification code digit 2">
+        <input class="verification-code-input" type="text" maxlength="1" inputmode="numeric" aria-label="Verification code digit 3">
+        <input class="verification-code-input" type="text" maxlength="1" inputmode="numeric" aria-label="Verification code digit 4">
+        <input class="verification-code-input" type="text" maxlength="1" inputmode="numeric" aria-label="Verification code digit 5">
+        <input class="verification-code-input" type="text" maxlength="1" inputmode="numeric" aria-label="Verification code digit 6">
+    </div>
+
+    <p id="verify-email-help" class="verify-email-help" aria-live="polite">
+        Please enter the 6-digit code
+    </p>
+
+    <div class="resend-code-row">
+        <span>Didn't receive the code?</span>
+        <button id="resend-code-button" type="button" class="link-button">Resend [60s]</button>
+    </div>
+
+    <div class="verify-email-actions">
+        <button id="verify-email-button" type="button">Verify</button>
+        <button id="back-to-registration-button" type="button">Back</button>
+    </div>
+
+    <div class="auth-actions verify-email-oauth">
+        <div class="auth-divider" aria-hidden="true">--OR--</div>
+        <button type="button" class="social-auth-button">
+            <span class="social-auth-logo" aria-hidden="true">
+                <img src="{% static 'accounts/images/discord-logo.png' %}" alt="">
+            </span>
+            <span>Sign in with Discord</span>
+        </button>
+        <button type="button" class="social-auth-button">
+            <span class="social-auth-logo" aria-hidden="true">
+                <img src="{% static 'accounts/images/google-logo.png' %}" alt="">
+            </span>
+            <span>Sign in with Google</span>
+        </button>
+    </div>
+</div>

@@ -1,0 +1,118 @@
+.auth-state {
+    display: none;
+}
+
+.auth-state.is-active {
+    display: block;
+}
+
+.verify-email-help {
+    margin-top: 5px;
+    color: #111111;
+    font-size: 10px;
+    line-height: 1.2;
+    opacity: 0;
+    transform: translateY(-6px);
+    max-height: 0;
+    overflow: hidden;
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease,
+        max-height 0.18s ease,
+        margin 0.18s ease;
+}
+
+.verify-email-help.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 24px;
+}
+
+.verify-email-help.is-info {
+    color: #111111;
+}
+
+.verify-email-help.is-error {
+    color: #7a1f1f;
+}
+
+.verify-email-help.is-shaking {
+    animation: username-help-shake 0.22s ease;
+}
+
+.verify-email-address {
+    display: flex;
+    align-items: center;
+    min-height: 34px;
+    padding: 6px 10px;
+    margin: 8px 0 12px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-top: 2px solid #808080;
+    border-left: 2px solid #808080;
+    border-right: 2px solid #ffffff;
+    border-bottom: 2px solid #ffffff;
+    background: #dcdcdc;
+}
+
+.verification-code-wrapper {
+    display: flex;
+    justify-content: center;
+    gap: 16px;
+    margin: 10px 0 8px;
+}
+
+.verification-code-input {
+    width: 34px;
+    height: 42px;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.resend-code-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin: 12px 0 14px;
+}
+
+.link-button {
+    min-height: 0;
+    padding: 0;
+    color: #000080;
+    text-decoration: underline;
+    background: transparent;
+    border: 0;
+    box-shadow: none;
+    font: inherit;
+    font-weight: 600;
+}
+
+.link-button.is-disabled,
+.link-button:disabled {
+    color: #808080;
+    cursor: default;
+    text-decoration: none;
+}
+
+.verify-email-actions {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    margin-top: 8px;
+}
+
+#auth-modal #verify-email-button,
+#auth-modal #back-to-registration-button {
+    min-width: 84px;
+    min-height: 30px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.verify-email-oauth {
+    margin-top: 10px;
+}

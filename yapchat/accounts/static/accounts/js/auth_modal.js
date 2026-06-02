@@ -435,6 +435,15 @@ if (submitButton && usernameInput) {
             if (isPasswordEmpty) shakeRequiredWarning(passwordRequiredWarning);
             if (isDobInvalid) shakeFieldHelp(dobHelp);
             if (selectedDob === null) shakeRequiredWarning(dobRequiredWarning);
+        } else {
+            event.preventDefault();
+            const registrationEmail = emailInput.value.trim();
+
+            if (window.VerifyEmail) {
+                window.VerifyEmail.show(registrationEmail);
+            } else {
+                console.error("Verify email state controller not found.");
+            }
         }
     });
 } else {
