@@ -20,6 +20,7 @@ from chat import views as chat_views # Import chat views directly
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('', include('accounts.urls')),
     path('chat/', include('chat.urls')),
     path('', chat_views.index, name='home'), # Map root to chat index
 ]

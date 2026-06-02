@@ -1,0 +1,23 @@
+{% load static %}
+<!-- chat/templates/chat/index.html -->
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8"/>
+    <link rel="stylesheet" href="https://unpkg.com/98.css">
+
+      <title>yap</title>
+    <link rel="stylesheet" href="{% static 'accounts/css/email_verification.css' %}?v=1">
+</head>
+{% load django_browser_reload %}
+{% django_browser_reload_script %}
+<body>
+    <h1>Verifying your email...</h1>
+    <p id="verification-status" aria-live="polite">Please wait while we verify</p>
+    <div class="status" id="status" hidden></div>
+
+    <script src="{% static 'accounts/js/email_verification.js' %}"></script>
+
+
+</body>
+</html>

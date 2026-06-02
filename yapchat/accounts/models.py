@@ -95,3 +95,56 @@ class Profile(models.Model):
             return "/static/images/default-banner.png"
         return f"https://cdn.yap.chat/{self.banner_key}"
 
+class EmailVerificationToken(models.Model):
+    # The account that owns this verification challenge
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL, 
+        on_delete=models.CASCADE, 
+        related_name='email_verification_tokens'
+    )
+    # The email address this token is verifying
+    # Store the exact email at the time the token was issued
+    email = models.EmailField()
+
+    # A hashed version of the raw token sent to the user
+    # Never store the raw token in the database for security reasons
+    token_hash = models.CharField(max_length=128,unique=True)
+
+    # The point after which the token must be rejected
+    expires_at = models.DateTimeField()
+
+    # Set when the token has been consumed (used for verification)
+    # Null if the token has not been used yet
+    used_at = models.DateTimeField(null=True, blank=True)
+
+    # When the verfication email was sent
+    sent_at = models.DateTimeField(auto_now_add=True)
+
+    # How many times the user has requested a new verification email (for rate limiting)
+    resend_count = models.PositiveIntegerField(default=0)
+
+    # How many failed verfication attempts have been made with this token (for security monitoring)
+    attempt_count = models.PositiveIntegerField(default=0)
+
+    # Created automatically when the token is created
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    # Updated automatically on every save
+    updated_at = models.DateTimeField(auto_now=True)
+
+    # Meta class to define database indexes for efficient querying of tokens based on user/email and expiration time.
+    class Meta:
+        # Useful for faster lookups and cleaner debugging
+        # Indexes on user and email for quickly finding tokens for a specific user/email combination, and on expires_at for efficiently querying valid tokens that haven't expired yet.
+        indexes = [
+            models.Index(fields=["user", "email"]),
+            models.Index(fields=["expires_at"]),
+        ]
+    def is_expired(self):
+        # Django timezone-aware datetime comparison to check if the token has expired
+        from django.utils import timezone
+        return timezone.now() >= self.expires_at
+    def is_used(self):
+        # Once used, the token must never be accepted again.
+        return self.used_at is not None
+    
