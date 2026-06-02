@@ -16,6 +16,11 @@ class User(AbstractUser):
     # Email verification status
     email_verified = models.BooleanField(default=False)
 
+    # Date of Birth 
+    date_of_birth = models.DateField(
+        null=True,
+        blank=True
+    )
     # Account Creation Timestamp
     created_at = models.DateTimeField(auto_now_add=True)
     

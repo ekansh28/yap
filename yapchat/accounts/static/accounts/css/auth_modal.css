@@ -24,3 +24,353 @@
 
     background: rgba(0, 0, 0, 0.55);
 }
+
+.auth-window {
+    width: 390px;
+}
+
+.auth-window .window-body {
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.required-marker {
+    color: #b00020;
+    font-weight: bold;
+    margin-left: 2px;
+}
+
+.required-warning {
+    display: inline-flex;
+    align-items: center;
+    width: 14px;
+    height: 14px;
+    margin-left: 4px;
+    opacity: 0;
+    transform: translateY(-2px);
+    visibility: hidden;
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease,
+        visibility 0.18s ease;
+}
+
+.required-warning.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+    visibility: visible;
+}
+
+.required-warning img {
+    display: block;
+    width: 14px;
+    height: 14px;
+    object-fit: contain;
+}
+
+.required-warning.is-shaking {
+    animation: required-warning-shake 0.22s ease;
+}
+
+@keyframes required-warning-shake {
+    0% {
+        transform: translateY(0) translateX(0);
+    }
+    25% {
+        transform: translateY(0) translateX(-3px);
+    }
+    50% {
+        transform: translateY(0) translateX(3px);
+    }
+    75% {
+        transform: translateY(0) translateX(-2px);
+    }
+    100% {
+        transform: translateY(0) translateX(0);
+    }
+}
+
+.auth-input-wrapper {
+    display: flex;
+    align-items: center;
+    width: 100%;
+}
+
+.auth-input-wrapper.no-counter::after {
+    content: "";
+    width: 5ch;
+    margin-left: 4px;
+    flex-shrink: 0;
+}
+
+.auth-input-wrapper input {
+    flex: 1;
+    min-width: 0;
+    width: auto;
+}
+
+
+/*
+░██████████ ░███     ░███    ░███    ░██████░██         
+░██         ░████   ░████   ░██░██     ░██  ░██         
+░██         ░██░██ ░██░██  ░██  ░██    ░██  ░██         
+░█████████  ░██ ░████ ░██ ░█████████   ░██  ░██         
+░██         ░██  ░██  ░██ ░██    ░██   ░██  ░██         
+░██         ░██       ░██ ░██    ░██   ░██  ░██         
+░██████████ ░██       ░██ ░██    ░██ ░██████░██████████ 
+                                                                                                                                                                  
+*/
+#email-input{
+    padding-left: 6px;
+}
+
+/*
+░███████   ░██████  ░██████   ░█████████  ░██            ░███    ░██     ░██    ░███    ░██    ░███    ░███     ░███ ░██████████ 
+░██   ░██    ░██   ░██   ░██  ░██     ░██ ░██           ░██░██    ░██   ░██     ░████   ░██   ░██░██   ░████   ░████ ░██         
+░██    ░██   ░██  ░██         ░██     ░██ ░██          ░██  ░██    ░██ ░██      ░██░██  ░██  ░██  ░██  ░██░██ ░██░██ ░██         
+░██    ░██   ░██   ░████████  ░█████████  ░██         ░█████████    ░████       ░██ ░██ ░██ ░█████████ ░██ ░████ ░██ ░█████████  
+░██    ░██   ░██          ░██ ░██         ░██         ░██    ░██     ░██        ░██  ░██░██ ░██    ░██ ░██  ░██  ░██ ░██         
+░██   ░██    ░██   ░██   ░██  ░██         ░██         ░██    ░██     ░██        ░██   ░████ ░██    ░██ ░██       ░██ ░██         
+░███████   ░██████  ░██████   ░██         ░██████████ ░██    ░██     ░██        ░██    ░███ ░██    ░██ ░██       ░██ ░██████████                                                                                                                                                                                                                                                                                                                                                                                         
+*/
+.display-name-input-wrapper {
+    display: flex;
+    align-items: center;
+}
+#display-name-input {
+    flex: 1;
+    min-width: 0;
+    padding-left: 6px;
+}
+#display-name-counter {
+    width: 5ch;
+    text-align: right;
+    margin-top: 4px;
+    color: #4b4b4b;
+    font-weight: bold;
+    font-size: 9px;
+    flex-shrink: 0;
+    font-family: monospace;
+    font-variant-numeric: tabular-nums;
+    opacity:0;
+    visibility: hidden;
+    transition:
+        opacity 0.1s ease,
+        visibility 0.1s ease;
+}
+
+#display-name-input.has-text + #display-name-counter {
+    opacity: 1;
+    visibility: visible;
+}
+/*
+░██     ░██   ░██████   ░██████████ ░█████████  ░███    ░██    ░███    ░███     ░███ ░██████████ 
+░██     ░██  ░██   ░██  ░██         ░██     ░██ ░████   ░██   ░██░██   ░████   ░████ ░██         
+░██     ░██ ░██         ░██         ░██     ░██ ░██░██  ░██  ░██  ░██  ░██░██ ░██░██ ░██         
+░██     ░██  ░████████  ░█████████  ░█████████  ░██ ░██ ░██ ░█████████ ░██ ░████ ░██ ░█████████  
+░██     ░██         ░██ ░██         ░██   ░██   ░██  ░██░██ ░██    ░██ ░██  ░██  ░██ ░██         
+ ░██   ░██   ░██   ░██  ░██         ░██    ░██  ░██   ░████ ░██    ░██ ░██       ░██ ░██         
+  ░██████     ░██████   ░██████████ ░██     ░██ ░██    ░███ ░██    ░██ ░██       ░██ ░██████████ 
+                                                                                                                                                                                              
+                                                                                                                                                                                                                                                                                                                                                                                                                                
+*/
+.username-input-wrapper {
+    display: flex;
+    align-items: center;
+}
+
+#username-input {
+    flex: 1;
+  
+    padding-left: 6px;
+}
+
+#username-counter {
+    width: 5ch;
+    text-align: right;
+    margin-left: 4px;
+    color: #4b4b4b;
+    font-weight: bold;
+    font-size: 9px;
+    flex-shrink: 0;
+    font-family: monospace;
+    font-variant-numeric: tabular-nums;
+    opacity:0;
+    visibility: hidden;
+    transition:
+        opacity 0.1s ease,
+        visibility 0.1s ease;
+}
+
+#username-input.has-text + #username-counter {
+    opacity: 1;
+    visibility: visible;
+}
+
+
+/* Field validation feedback */
+.email-help,
+.username-help,
+.display-name-help,
+.password-help,
+.dob-help {
+    margin-top: 5px;
+    color: #111111;
+    font-size: 10px;
+    line-height: 1.2;
+    opacity: 0;
+    transform: translateY(-6px);
+    max-height: 0;
+    overflow: hidden;
+    transition:
+        opacity 0.18s ease,
+        transform 0.18s ease,
+        max-height 0.18s ease,
+        margin 0.18s ease;
+}
+
+.email-help.is-visible,
+.username-help.is-visible,
+.display-name-help.is-visible,
+.password-help.is-visible,
+.dob-help.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+    max-height: 24px;
+        
+}
+
+.email-help.is-info,
+.username-help.is-info,
+.display-name-help.is-info,
+.password-help.is-info,
+.dob-help.is-info {
+    color: #111111;
+}
+
+.email-help.is-error,
+.username-help.is-error,
+.display-name-help.is-error,
+.password-help.is-error,
+.dob-help.is-error {
+    color: #7a1f1f;
+}
+
+.email-help.is-shaking,
+.username-help.is-shaking,
+.display-name-help.is-shaking,
+.password-help.is-shaking,
+.dob-help.is-shaking {
+    animation: username-help-shake 0.22s ease;
+}
+
+@keyframes username-help-shake {
+    0% {
+        transform: translateY(0) translateX(0);
+    }
+    25% {
+        transform: translateY(0) translateX(-3px);
+    }
+    50% {
+        transform: translateY(0) translateX(3px);
+    }
+    75% {
+        transform: translateY(0) translateX(-2px);
+    }
+    100% {
+        transform: translateY(0) translateX(0);
+    }
+}
+
+/*
+░███████     ░██████   ░████████   
+░██   ░██   ░██   ░██  ░██    ░██  
+░██    ░██ ░██     ░██ ░██    ░██  
+░██    ░██ ░██     ░██ ░████████   
+░██    ░██ ░██     ░██ ░██     ░██ 
+░██   ░██   ░██   ░██  ░██     ░██ 
+░███████     ░██████   ░█████████                                   
+*/
+
+
+.date-of-birth-wrapper {
+    display: flex;
+    gap: 6px;
+    width: calc(100% - 5ch - 4px);
+}
+
+.date-of-birth-wrapper select {
+    min-width: 0;
+}
+
+#dob-day {
+    width: 58px;
+}
+
+#dob-month {
+    flex: 1;
+}
+
+#dob-year {
+    width: 78px;
+}
+
+.auth-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 7px;
+    margin-top: 10px;
+}
+
+.auth-divider {
+    color: #4b4b4b;
+    font-size: 11px;
+}
+
+#auth-modal .social-auth-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: calc(100% - 5ch - 4px);
+    min-width: calc(100% - 5ch - 4px);
+    max-width: calc(100% - 5ch - 4px);
+}
+
+#auth-modal #submit-button,
+#auth-modal .social-auth-button {
+    min-height: 30px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+#auth-modal .social-auth-logo {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    max-width: 16px;
+    min-height: 16px;
+    max-height: 16px;
+    flex-shrink: 0;
+    overflow: hidden;
+}
+
+#auth-modal .social-auth-logo img {
+    display: block;
+    width: 16px;
+    height: 16px;
+    min-width: 16px;
+    max-width: 16px;
+    min-height: 16px;
+    max-height: 16px;
+    object-fit: contain;
+    opacity: 0.8;
+    filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.25));
+}
+#auth-modal .social-auth-button:active .social-auth-logo {
+    transform: translate(1px, 1px);
+}
