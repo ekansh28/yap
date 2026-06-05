@@ -1,11 +1,35 @@
 import json
+import re
+from smtplib import SMTPException
+from time import perf_counter
+
+from django.conf import settings
+from django.contrib.auth import get_user_model
+from django.contrib.auth.password_validation import validate_password
+from django.core.mail import BadHeaderError
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.http import JsonResponse
 from django.shortcuts import render
+from django.urls import reverse
+from django.utils import timezone
+from django.utils.dateparse import parse_date
+from django.db import transaction
 from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_protect
 from django.views.decorators.csrf import ensure_csrf_cookie
 
-from accounts.services.email_verification import consume_email_verification_token
+from accounts.services.email_delivery import send_verification_email
+from accounts.services.email_verification import (
+    consume_email_verification_token,
+    create_email_verification_token,
+)  
+
+# send_verification_email_task is the Celery task that will be called to send the verification email asynchronously. It is imported here so that it can be used in the register_user view to send the email without blocking the request-response cycle.
+from accounts.tasks import send_verification_email_task
+
+User = get_user_model()
+USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_.]+$")
 # Create your views here.
 
 @require_http_methods(["GET"])
@@ -18,6 +42,158 @@ def verify_email_page(request):
 @require_http_methods(["GET"])
 def verify_email_success_page(request):
     return render(request, "accounts/verify_email_success.html")
+
+def is_at_least_13(date_of_birth):
+    today = timezone.localdate()
+    age = today.year - date_of_birth.year - (
+        (today.month, today.day) < (date_of_birth.month, date_of_birth.day)
+    )
+    return age >= 13
+
+@require_http_methods(["POST"])
+@csrf_protect
+def register_user(request):
+    # TEMP DEBUG: registration timing instrumentation. Remove after profiling.
+    request_started_at = perf_counter()
+    print("[register] start: 0.000s")
+
+    try:
+        step_started_at = perf_counter()
+        payload = json.loads(request.body.decode("utf-8"))
+        print(f"[register] parse_input: {perf_counter() - step_started_at:.3f}s")
+    except json.JSONDecodeError:
+        print(f"[register] total: {perf_counter() - request_started_at:.3f}s")
+        return JsonResponse({"ok": False, "message": "Invalid Request."}, status=400)
+
+    validation_started_at = perf_counter()
+    email = payload.get("email", "").strip()
+    username = payload.get("username", "").strip()
+    display_name = payload.get("display_name", "").strip()
+    password = payload.get("password", "")
+    date_of_birth_raw = payload.get("date_of_birth", "").strip()
+
+    errors = {}
+
+    if not email:
+        errors["email"] = "Email is required."
+    else:
+        try:
+            validate_email(email)
+        except ValidationError:
+            errors["email"] = "Enter a valid email address."
+        if "email" not in errors:
+            step_started_at = perf_counter()
+            email_exists = User.objects.filter(email__iexact=email).exists()
+            print(f"[register] email_uniqueness: {perf_counter() - step_started_at:.3f}s")
+            if email_exists:
+                errors["email"] = "An account with this email already exists."
+
+    if not username:
+        errors["username"] = "Username is required."
+    elif len(username) < 3:
+        errors["username"] = "Username must be at least 3 characters."
+    elif len(username) > 32:
+        errors["username"] = "Username must be 32 characters or less."
+    elif not USERNAME_PATTERN.fullmatch(username):
+        errors["username"] = "Use only letters, numbers, underscores, or periods."
+    else:
+        step_started_at = perf_counter()
+        username_exists = User.objects.filter(username__iexact=username).exists()
+        print(f"[register] username_uniqueness: {perf_counter() - step_started_at:.3f}s")
+        if username_exists:
+            errors["username"] = "That username is already taken."
+
+    if display_name and len(display_name) > 32:
+        errors["display_name"] = "Display name must be 32 characters or less."
+
+    if not password:
+        errors["password"] = "Password is required."
+    elif len(password) < 8:
+        errors["password"] = "Password must be at least 8 characters."
+    else:
+        try:
+            validate_password(password)
+        except ValidationError as exc:
+            errors["password"] = exc.messages[0] if exc.messages else "Password is too weak."
+
+    date_of_birth = parse_date(date_of_birth_raw) if date_of_birth_raw else None
+    if date_of_birth is None:
+        errors["date_of_birth"] = "Please select a valid date of birth."
+    elif not is_at_least_13(date_of_birth):
+        errors["date_of_birth"] = "You must be at least 13 years old to register."
+
+    print(f"[register] validation: {perf_counter() - validation_started_at:.3f}s")
+
+    if errors:
+        print(f"[register] total: {perf_counter() - request_started_at:.3f}s")
+        return JsonResponse(
+            {
+                "ok": False,
+                "message": "Please fix the highlighted fields.",
+                "errors": errors,
+            },
+            status=400,
+        )
+
+    try:
+        atomic_started_at = perf_counter()
+        with transaction.atomic():
+            step_started_at = perf_counter()
+            user = User.objects.create_user(
+                username=username,
+                email=email,
+                password=password,
+                date_of_birth=date_of_birth,
+            )
+            print(f"[register] create_user: {perf_counter() - step_started_at:.3f}s")
+
+            step_started_at = perf_counter()
+            if display_name:
+                user.profile.display_name = display_name
+                user.profile.save()
+            print(f"[register] profile_display_name_save: {perf_counter() - step_started_at:.3f}s")
+
+            step_started_at = perf_counter()
+            _, raw_token = create_email_verification_token(user)
+            print(f"[register] create_email_verification_token: {perf_counter() - step_started_at:.3f}s")
+
+            step_started_at = perf_counter()
+            verification_url = request.build_absolute_uri(reverse("verify_email_page"))
+            verification_url = f"{verification_url}#token={raw_token}"
+
+            def queue_verification_email():
+                # TEMP DEBUG: this callback runs after the DB transaction commits.
+                celery_started_at = perf_counter()
+                send_verification_email_task.delay(
+                    to_email=user.email,
+                    username=user.profile.effective_display_name,
+                    verification_url=verification_url,
+                    idempotency_key=f"verify-email/{user.pk}",
+                )
+                print(f"[register] celery_publish: {perf_counter() - celery_started_at:.3f}s")
+
+            transaction.on_commit(queue_verification_email)
+            print(f"[register] on_commit_register: {perf_counter() - step_started_at:.3f}s")
+        print(f"[register] transaction_atomic_exit: {perf_counter() - atomic_started_at:.3f}s")
+    except (BadHeaderError, SMTPException, OSError) as exc:
+        print(f"[register] total: {perf_counter() - request_started_at:.3f}s")
+        return JsonResponse(
+            {
+                "ok": False,
+                "message": "Account was not created because the verification email could not be sent.",
+                "detail": str(exc) if settings.DEBUG else "",
+            },
+            status=502,
+        )
+
+    print(f"[register] total: {perf_counter() - request_started_at:.3f}s")
+    return JsonResponse(
+        {
+            "ok": True,
+            "message": "Account created. Check your email to verify your account.",
+        },
+        status=201,
+    )
 
 @require_http_methods(["POST"])
 @csrf_protect

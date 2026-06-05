@@ -11,9 +11,14 @@
 {% load django_browser_reload %}
 {% django_browser_reload_script %}
 <body>
-    <h1>Verifying your email...</h1>
-    <p id="verification-status" aria-live="polite">Please wait while we verify</p>
-    <div class="status" id="status" hidden></div>
+    <div id="verification-container">
+       <p id="verifying-message"> Verifying your email... </p></br>
+        
+        <img src="{% static 'image/loading.gif' %}" alt="Loading" id="loading-gif" > <span id="please-wait-message">Please wait while we verify...</span>
+        <div class="status" id="status" hidden></div>
+    </div>
+   
+
 
     <script src="{% static 'accounts/js/email_verification.js' %}"></script>
 </body>

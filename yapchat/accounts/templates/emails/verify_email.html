@@ -1,0 +1,90 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        @font-face {
+            font-family: "Pixelated MS Sans Serif";
+            src: url("{% static 'email/fonts/ms-sans-serif-1.otf' %}")
+                format("opentype");
+        }
+
+        .window {
+            background: silver;
+            border: 2px solid;
+            border-color: white gray gray white;
+            padding: 3px;
+            width: 420px;
+            margin: auto;
+            font-family:
+                "Pixelated MS Sans Serif",
+                Tahoma,
+                Arial,
+                sans-serif;
+
+            font-size: 12px;
+        }
+
+        .title-bar {
+            background: navy;
+            color: white;
+            padding: 4px;
+            font-weight: bold;
+        }
+
+        .window-body {
+            padding: 12px;
+        }
+
+        .button {
+            display: inline-block;
+            background: silver;
+            border: 2px solid;
+            border-color: white gray gray white;
+            color: black;
+            padding: 8px 20px;
+            font-family:
+                "Pixelated MS Sans Serif",
+                Tahoma,
+                Arial,
+                sans-serif;
+            text-decoration: none;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="window">
+
+    <div class="title-bar">
+        Verify your email
+    </div>
+
+    <div class="window-body">
+
+        <p>Hi {{ username }},</p>
+
+        <p>
+            Finish creating your YapChat account.
+        </p>
+
+        <p align="center">
+            <a
+                href="{{ verification_url }}"
+                class="button"
+            >
+                Verify Email
+            </a>
+        </p>
+
+        <p>
+            This link expires in 15 minutes.
+        </p>
+
+    </div>
+
+</div>
+
+</body>
+</html>

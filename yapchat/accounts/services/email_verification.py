@@ -7,6 +7,7 @@ import hmac
 import secrets
 # timedelta is used to set the expiration time for the token
 from datetime import timedelta
+from time import perf_counter
 
 from django.conf import settings
 # transaction is used to ensure that the creation of the token and the sending of the email are atomic operations
@@ -32,32 +33,45 @@ def hash_token(raw_token):
 # This function creates a new email verification token for a user and sends the verification email
 @transaction.atomic
 def create_email_verification_token(user):
+    # TEMP DEBUG: email verification token timing instrumentation. Remove after profiling.
+    token_started_at = perf_counter()
+    print("[token] start: 0.000s")
+
     # Generate the raw secret only in memory
+    step_started_at = perf_counter()
     raw_token = generate_raw_token()
+    print(f"[token] generate_raw_token: {perf_counter() - step_started_at:.3f}s")
 
     # Hash the raw token before writing anything to the database
+    step_started_at = perf_counter()
     token_hash = hash_token(raw_token)
+    print(f"[token] hash_token: {perf_counter() - step_started_at:.3f}s")
 
     # invalidate any previous active token for this user/email 
     # Keeps only one valid verification token active at a time
+    step_started_at = perf_counter()
     EmailVerificationToken.objects.filter(
         user=user, 
         email=user.email, 
         used_at__isnull=True, 
     ).update(used_at=timezone.now())
+    print(f"[token] invalidate_previous_tokens: {perf_counter() - step_started_at:.3f}s")
 
     # Create a new active verification row
 
     # token_row is the database record that stores the hashed token and its metadata, while raw_token is the actual token string that will be sent to the user via email. 
     # The raw token is never stored in the database for security reasons, and only the hash of the token is saved.
+    step_started_at = perf_counter()
     token_row = EmailVerificationToken.objects.create(
         user=user,
         email=user.email,
         token_hash=token_hash,
         expires_at=timezone.now() + timedelta(minutes=15),  # Token expires in 15 minutes
     )
+    print(f"[token] create_row: {perf_counter() - step_started_at:.3f}s")
 
     # Return both token row and raw_token
+    print(f"[token] total: {perf_counter() - token_started_at:.3f}s")
     return token_row, raw_token
 
 @transaction.atomic

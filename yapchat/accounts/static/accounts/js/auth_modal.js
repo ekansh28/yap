@@ -25,7 +25,9 @@ const passwordMessage = "Password must be at least 8 characters";
 const dobMessage = "You must be at least 13 years old to register";
 const dobRequiredMessage = "Please select your date of birth";
 const dobInvalidMessage = "Please enter a valid date of birth";
+const registerEndpoint = "/api/register/";
 const usernamePattern = /^[A-Za-z0-9_.]*$/;
+
 let shouldShowEmailRequiredError = false;
 let shouldShowUsernameRequiredError = false;
 let shouldShowUsernameLengthError = false;
@@ -220,6 +222,69 @@ function shakeRequiredWarning(warningElement) {
     warningElement.classList.add("is-shaking");
 }
 
+function getCSRFToken() {
+    const cookieName = "csrftoken=";
+    const cookies = document.cookie ? document.cookie.split(";") : [];
+
+    for (const cookie of cookies) {
+        const trimmedCookie = cookie.trim();
+        if (trimmedCookie.startsWith(cookieName)) {
+            return decodeURIComponent(trimmedCookie.slice(cookieName.length));
+        }
+    }
+
+    return "";
+}
+
+function applyServerErrors(errors = {}) {
+    if (errors.email) {
+        setFieldHelp(emailHelp, errors.email, true, "error");
+        setRequiredWarning(emailRequiredWarning, true);
+    }
+
+    if (errors.username) {
+        setFieldHelp(usernameHelp, errors.username, true, "error");
+        setRequiredWarning(usernameRequiredWarning, true);
+    }
+
+    if (errors.display_name) {
+        setFieldHelp(displayNameHelp, errors.display_name, true, "error");
+    }
+
+    if (errors.password) {
+        setFieldHelp(passwordHelp, errors.password, true, "error");
+        setRequiredWarning(passwordRequiredWarning, true);
+    }
+
+    if (errors.date_of_birth) {
+        setFieldHelp(dobHelp, errors.date_of_birth, true, "error");
+        setRequiredWarning(dobRequiredWarning, true);
+    }
+}
+
+function showRegistrationError(message) {
+    setFieldHelp(
+        emailHelp,
+        message || "Registration failed. Please try again.",
+        true,
+        "error"
+    );
+}
+
+async function readJsonResponse(response) {
+    const contentType = response.headers.get("Content-Type") || "";
+
+    if (contentType.includes("application/json")) {
+        return response.json();
+    }
+
+    const text = await response.text();
+    return {
+        ok: false,
+        message: text ? "The server returned an unexpected error." : "Registration failed.",
+    };
+}
+
 function setUsernameHelp(message, isVisible, state = "info") {
     setFieldHelp(usernameHelp, message, isVisible, state);
 }
@@ -388,7 +453,7 @@ function updateDobHelp() {
 
 //#region Submit Validation Logic
 if (submitButton && usernameInput) {
-    submitButton.addEventListener("click", (event) => {
+    submitButton.addEventListener("click", async (event) => {
         const isEmailEmpty = !emailInput || emailInput.value.trim().length === 0;
         const usernameLength = usernameInput.value.trim().length;
         const isUsernameEmpty = usernameLength === 0;
@@ -437,12 +502,43 @@ if (submitButton && usernameInput) {
             if (selectedDob === null) shakeRequiredWarning(dobRequiredWarning);
         } else {
             event.preventDefault();
-            const registrationEmail = emailInput.value.trim();
+            const payload = {
+                email: emailInput.value.trim(),
+                display_name: displayNameInput ? displayNameInput.value.trim() : "",
+                username: usernameInput.value.trim(),
+                password: passwordInput ? passwordInput.value : "",
+                date_of_birth: dobInput ? dobInput.value : "",
+            };
 
-            if (window.VerifyEmail) {
-                window.VerifyEmail.show(registrationEmail);
-            } else {
-                console.error("Verify email state controller not found.");
+            try {
+                const response = await fetch(registerEndpoint, {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        "X-CSRFToken": getCSRFToken(),
+                    },
+                    body: JSON.stringify(payload),
+                });
+
+                const data = await readJsonResponse(response);
+
+                if (!response.ok || !data.ok) {
+                    applyServerErrors(data.errors || {});
+                    if (!Object.keys(data.errors || {}).length) {
+                        showRegistrationError(data.message);
+                        console.error(data.detail || data.message || "Registration failed.");
+                    }
+                    return;
+                }
+
+                if (window.VerifyEmail) {
+                    window.VerifyEmail.show(payload.email);
+                } else {
+                    console.error("Verify email state controller not found.");
+                }
+            } catch (error) {
+                showRegistrationError("Registration request failed. Please try again.");
+                console.error("Registration request failed.", error);
             }
         }
     });

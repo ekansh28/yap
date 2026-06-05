@@ -28,6 +28,9 @@ function getCSRFToken() {
 async function verifyToken() {
     const messageElement = document.getElementById('verification-status');
     const statusElement = document.getElementById('status');
+    const loadingGif = document.getElementById('loading-gif');
+    const pleasewaitMessage = document.getElementById('please-wait-message');
+    const verifyingMessage = document.getElementById('verifying-message');
     const token = getTokenFromFragment();
 
     if (!token) {
@@ -52,6 +55,9 @@ async function verifyToken() {
         const data = await response.json();
 
         statusElement.hidden = false;
+        loadingGif.hidden = true;
+        pleasewaitMessage.hidden = true;
+        verifyingMessage.hidden = true;
         statusElement.textContent = data.message || "Verification Complete.";
 
         if (data.ok) {

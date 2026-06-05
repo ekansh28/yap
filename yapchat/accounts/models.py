@@ -87,7 +87,7 @@ class Profile(models.Model):
     @property
     def avatar_url(self):
         if not self.avatar_key:
-            return "/static/images/default-avatar.png"
+            return "/static/image/default-avatar.png"
         return f"https://cdn.yap.chat/{self.avatar_key}"
     @property
     def banner_url(self):

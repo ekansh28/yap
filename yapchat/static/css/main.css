@@ -35,6 +35,7 @@ body {
     left: 0;
 
     width: 100%;
+    box-sizing: border-box;
 
     display: flex;
     justify-content: space-between;
@@ -47,6 +48,65 @@ body {
     z-index: 1000;
 }
 
+
+.top-bar-actions {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+}
+
+.profile-widget {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    max-width: min(260px, 55vw);
+    min-width: 0;
+}
+
+#profile-avatar-container {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    height: fit-content;
+    padding: 2px;
+    background-color: #00000049;
+   box-shadow: inset -1px -1px #fff, inset 1px 1px grey, inset -2px -2px #dfdfdf, inset 2px 2px #0a0a0a;
+    box-sizing: border-box;
+
+}
+
+.profile-widget-avatar {
+    width: 16px;
+    height: 16px;
+    flex: 0 0 auto;
+    object-fit: cover;
+
+    display: block;
+}
+
+.profile-widget-name {
+    max-width: 150px;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: #ffffff;
+    font-weight: bold;
+}
+
+.profile-widget-menu-button {
+    flex: 0 0 auto;
+    min-width: 22px;
+    padding-left: 6px;
+    padding-right: 6px;
+}
+
+.profile-widget-menu {
+    font-weight: bold;
+}
 
 
 /* 
