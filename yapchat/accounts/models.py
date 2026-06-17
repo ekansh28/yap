@@ -53,9 +53,28 @@ class Profile(models.Model):
     # Display name for the user (can be different from username)
     display_name = models.CharField(max_length=32, blank=True)
 
+    # Custom display name color
+    display_name_color = models.CharField(
+        max_length=7,
+        default="#ffffff"
+    )
+
+    # Optional animated effect
+    display_name_effect = models.CharField(
+        max_length=32,
+        blank=True,
+        default="none"
+    )
+
     # User bio or description
     bio = models.TextField(max_length=200, blank=True)
-
+    
+    # Frame image (optional) - this could be a decorative border around the avatar, stored as a reference to an image in our CDN. We use a CharField to store the key or URL of the frame image, and it's optional (blank=True) because not all users will have a frame. The default is an empty string, which indicates no frame.
+    frame_key = models.CharField(
+    max_length=500,
+    blank=True,
+    default=""
+    )
     # Profile picture (optional)
     avatar_key = models.CharField(max_length=500, blank=True, default="")
     
@@ -83,6 +102,11 @@ class Profile(models.Model):
     def effective_display_name(self):
         return self.display_name or self.user.username
     
+    @property
+    def frame_url(self):
+        if not self.frame_key:
+            return ""
+        return f"https://cdn.yap.chat/{self.frame_key}"
     #Helper method to get avatar URL 
     @property
     def avatar_url(self):
@@ -92,7 +116,7 @@ class Profile(models.Model):
     @property
     def banner_url(self):
         if not self.banner_key:
-            return "/static/images/default-banner.png"
+            return "/static/image/default-banner.png"
         return f"https://cdn.yap.chat/{self.banner_key}"
 
 class EmailVerificationToken(models.Model):

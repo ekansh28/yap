@@ -1,7 +1,7 @@
 #profile-modal {
     position: fixed;
     inset: 0;
-
+    
     display: grid;
     place-items: center;
 
@@ -24,9 +24,234 @@
     background: rgba(0, 0, 0, 0.55);
 }
 
+.modal-buttons {
+    display: flex;
+    justify-content: flex-end;
+    gap: 6px;
+    margin-top: 12px;
+}
+
+.modal-buttons button {
+    min-width: 75px;
+}
+
 
 #profile-modal .window-body {
     font-size: 13px;
     font-weight: 600;
+}
+
+
+.profile-sidebar {
+    width: 120px;
+
+    display: flex;
+    flex-direction: column;
+    padding:4px;
+    gap: 2px;
+    
+}
+.sidebar-item img{
+    width: 12px;
+    height: 12px;
+
+    margin-right: 1px;
+
+    image-rendering: pixelated; /* optional for retro icons */
+    transition: filter 0.2s ease;
+}
+
+.sidebar-item {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+
+    padding: 6px 8px;
+    margin: 2px;
+
+    cursor: pointer;
+    user-select: none;
+
+    border: 2px groove;
+    border-color: threedface;
+
+    transition:
+        background-color 0.15s ease,
+        color 0.15s ease,
+        filter 0.15s ease;
+}
+
+.sidebar-item:hover {
+    background: navy;
+    color: white;
+}
+
+.sidebar-item.active {
+    background: navy;
+    color: white;
+    border: 2px inset;
+    border-color: threedface;
+}
+
+.sidebar-item:hover img{
+    filter: brightness(0) invert(1);
+}
+.sidebar-item.active img {
+    filter: brightness(0) invert(1);
+}
+
+.sidebar-content {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+
+    transition: transform 0.05s linear;
+}
+
+.sidebar-item.active .sidebar-content {
+    transform: translate(1px, 1px);
+}
+
+
+
+/*
+░██████████ ░███████   ░██████░██████████  ░██████   ░█████████  
+░██         ░██   ░██    ░██      ░██     ░██   ░██  ░██     ░██ 
+░██         ░██    ░██   ░██      ░██    ░██     ░██ ░██     ░██ 
+░█████████  ░██    ░██   ░██      ░██    ░██     ░██ ░█████████  
+░██         ░██    ░██   ░██      ░██    ░██     ░██ ░██   ░██   
+░██         ░██   ░██    ░██      ░██     ░██   ░██  ░██    ░██  
+░██████████ ░███████   ░██████    ░██      ░██████   ░██     ░██ 
+                                                                 
+                                                                 
+                                                                
+*/
+
+.editor-page {
+    opacity: 0;
+    transform: translateY(5px);
+
+    pointer-events: none;
+
+    position: absolute;
+
+    transition:
+        opacity 0.18s ease-in-out,
+        transform 0.18s ease-in-out;
+}
+
+.editor-page.active {
+    opacity: 1;
+    transform: translateY(0);
+
+    pointer-events: auto;
+}
+.setting-group {
+    margin-bottom: 10px;
+}
+/* Space B/W Label and input/button */
+.setting-group label {
+    display: block;
+    margin-bottom: 4px;
+}
+
+/* Display NAME */
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.setting-counter {
+    font-size: 11px;
+    color: gray;
+    white-space: nowrap;
+}
+
+
+.bio-textarea {
+    width: 100%;
+    resize: none;
+}
+.bio-container {
+    position: relative;
+}
+
+.bio-textarea {
+    width: 100%;
+    resize: none;
+    box-sizing: border-box;
+
+    /* So the text doesn't overlap the counter */
+    padding-bottom: 18px;
+}
+
+.bio-counter {
+    position: absolute;
+
+    right: 8px;
+    bottom: 6px;
+
+    font-size: 10px;
+    color: gray;
+
+    pointer-events: none;
+}
+
+
+.delete-button {
+    background: #cc0000;
+    color: white;
+
+    font-weight: bold;
+
+    padding: 6px 12px;
+
+    cursor: pointer;
+}
+
+.icon-button {
+    background: transparent !important;
+    box-shadow: none !important;
+    border: none !important;
+
+    min-width: auto !important;
+    min-height: auto !important;
+
+    padding: 0 !important;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+}
+.icon-button img {
+    width: 14px;
+    height: 14px;
+    filter: drop-shadow(1px 1px 0 black);
+}
+.icon-button:active img {
+    transform: translate(1px, 1px);
+}
+
+
+
+/* username change modal */
+.modal-overlay {
+    display: none;
+
+    position: fixed;
+    inset: 0;
+
+    z-index: 99999;
+    background: rgba(0,0,0,0.4);
+
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-overlay .window {
+    width: 200px;
 }
 

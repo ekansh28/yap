@@ -15,18 +15,18 @@ const emailRequiredWarning = document.getElementById("email-required-warning");
 const usernameRequiredWarning = document.getElementById("username-required-warning");
 const passwordRequiredWarning = document.getElementById("password-required-warning");
 const dobRequiredWarning = document.getElementById("dob-required-warning");
-const emailRequiredMessage = "Please enter your email";
-const usernameRequiredMessage = "Please enter your username";
-const usernameRulesMessage = "Please use only numbers, letters, underscores _ or periods.";
-const usernameLengthMessage = "Username must be 3-32 characters";
-const displayNameMessage = "This is how others see you. You can use special characters and emojis!";
-const passwordRequiredMessage = "Please enter your password";
-const passwordMessage = "Password must be at least 8 characters";
-const dobMessage = "You must be at least 13 years old to register";
-const dobRequiredMessage = "Please select your date of birth";
-const dobInvalidMessage = "Please enter a valid date of birth";
+export const emailRequiredMessage = "Please enter your email";
+export const usernameRequiredMessage = "Please enter your username";
+export const usernameRulesMessage = "Please use only numbers, letters, underscores _ or periods.";
+export const usernameLengthMessage = "Username must be 3-32 characters";
+export const displayNameMessage = "This is how others see you. You can use special characters and emojis!";
+export const passwordRequiredMessage = "Please enter your password";
+export const passwordMessage = "Password must be at least 8 characters";
+export const dobMessage = "You must be at least 13 years old to register";
+export const dobRequiredMessage = "Please select your date of birth";
+export const dobInvalidMessage = "Please enter a valid date of birth";
 const registerEndpoint = "/api/register/";
-const usernamePattern = /^[A-Za-z0-9_.]*$/;
+export const usernamePattern = /^[A-Za-z0-9_.]*$/;
 
 let shouldShowEmailRequiredError = false;
 let shouldShowUsernameRequiredError = false;
@@ -48,7 +48,6 @@ const months = [
 
 function populateDobFields() {
     if (!dobDay || !dobMonth || !dobYear) {
-        console.error("One or more date of birth fields are missing.");
         return;
     }
     for (let day = 1; day <= 31; day++) {
@@ -77,7 +76,6 @@ function populateDobFields() {
 
 function updateDobValue() {
     if (!dobDay || !dobMonth || !dobYear || !dobInput) {
-        console.error("One or more date of birth fields are missing.");
         return;
     }
     const day = dobDay.value;
@@ -108,11 +106,11 @@ populateDobFields();
 //#region OPEN-CLOSE BUTTON LOGIC FOR AUTHENTICATION MODAL
 // Function to open the authentication modal
 function openAuthModal() {
-    authModal.classList.add("is-open");
+    if (authModal) authModal.classList.add("is-open");
 }
 // Function to close the authentication modal
 function closeAuthModal() {
-    authModal.classList.remove("is-open");
+    if (authModal) authModal.classList.remove("is-open");
 }
 
 if (authButton && authModal && closeButton) {
@@ -132,8 +130,6 @@ if (emailInput) {
     emailInput.addEventListener("input", updateEmailHelp);
     emailInput.addEventListener("blur", updateEmailHelp);
     updateEmailHelp();
-} else {
-    console.error("Email input element not found.");
 }
 //#endregion
 
@@ -157,8 +153,6 @@ if (usernameInput && usernameCounter) {
     usernameInput.addEventListener("focus", updateUsernameHelp);
     usernameInput.addEventListener("blur", updateUsernameHelp);
     updateUsernameCounter();
-} else {
-    console.error("Username input or counter element not found.");
 }
 //#endregion
 
@@ -177,8 +171,6 @@ if (displayNameInput && displayNameCounter) {
     displayNameInput.addEventListener("focus", updateDisplayNameHelp);
     displayNameInput.addEventListener("blur", updateDisplayNameHelp);
     updateDisplayNameCounter();
-} else {
-    console.error("Display name input or counter element not found.");
 }
 //#endregion
 
@@ -188,14 +180,12 @@ if (passwordInput) {
     passwordInput.addEventListener("focus", updatePasswordHelp);
     passwordInput.addEventListener("blur", updatePasswordHelp);
     updatePasswordHelp();
-} else {
-    console.error("Password input element not found.");
 }
 //#endregion
 
 //#region Username Input Validation
 
-function setFieldHelp(helpElement, message, isVisible, state = "info") {
+export function setFieldHelp(helpElement, message, isVisible, state = "info") {
     if(!helpElement) return;
     helpElement.textContent = message;
     helpElement.classList.toggle("is-visible", isVisible);
@@ -203,26 +193,26 @@ function setFieldHelp(helpElement, message, isVisible, state = "info") {
     helpElement.classList.toggle("is-info", state === "info");
 }
 
-function setRequiredWarning(warningElement, isVisible) {
+export function setRequiredWarning(warningElement, isVisible) {
     if (!warningElement) return;
     warningElement.classList.toggle("is-visible", isVisible);
 }
 
-function shakeFieldHelp(helpElement) {
+export function shakeFieldHelp(helpElement) {
     if (!helpElement) return;
     helpElement.classList.remove("is-shaking");
     void helpElement.offsetWidth;
     helpElement.classList.add("is-shaking");
 }
 
-function shakeRequiredWarning(warningElement) {
+export function shakeRequiredWarning(warningElement) {
     if (!warningElement) return;
     warningElement.classList.remove("is-shaking");
     void warningElement.offsetWidth;
     warningElement.classList.add("is-shaking");
 }
 
-function getCSRFToken() {
+export function getCSRFToken() {
     const cookieName = "csrftoken=";
     const cookies = document.cookie ? document.cookie.split(";") : [];
 
@@ -482,14 +472,14 @@ if (submitButton && usernameInput) {
             updateDobHelp();
 
             if (isEmailEmpty) {
-                emailInput.focus();
+                if (emailInput) emailInput.focus();
             } else if (isUsernameInvalid) {
-                usernameInput.focus();
+                if (usernameInput) usernameInput.focus();
             } else if (isPasswordInvalid) {
-                passwordInput.focus();
+                if (passwordInput) passwordInput.focus();
             } else if (isDobInvalid) {
                 const firstDobField = !dobDay.value ? dobDay : !dobMonth.value ? dobMonth : dobYear;
-                firstDobField.focus();
+                if (firstDobField) firstDobField.focus();
             }
 
             if (isEmailEmpty) shakeFieldHelp(emailHelp);
@@ -542,7 +532,5 @@ if (submitButton && usernameInput) {
             }
         }
     });
-} else {
-    console.error("Submit button or username input element not found.");
 }
-//#endregion
+

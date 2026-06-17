@@ -10,6 +10,11 @@ from django.core.mail import BadHeaderError
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.http import JsonResponse
+
+from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
+from django.contrib.auth import update_session_auth_hash
+
 from django.shortcuts import render
 from django.urls import reverse
 from django.utils import timezone
@@ -24,6 +29,8 @@ from accounts.services.email_verification import (
     consume_email_verification_token,
     create_email_verification_token,
 )  
+
+
 
 # send_verification_email_task is the Celery task that will be called to send the verification email asynchronously. It is imported here so that it can be used in the register_user view to send the email without blocking the request-response cycle.
 from accounts.tasks import send_verification_email_task
@@ -229,3 +236,80 @@ def verify_email_token(request):
                         "message": message,
                         "redirect_url": "/verify/success/"
                         },status=200)
+
+@login_required
+@require_POST # only allow POST requests 
+def update_profile(request):
+    try:
+        #1. Parse the JSON data sent from JS
+        data=json.loads(request.body)
+        
+        #2. Get specific fields we want to update
+        #.get() is safe because it returns None if the key is missing
+        new_display_name = data.get('display_name')
+        new_bio = data.get('bio')
+
+        #3. Get the user's profile object
+        profile = request.user.profile
+
+        #4. Basic Validation (Backend must always revalidates)
+        if new_display_name is not None:
+            if len(new_display_name) > 32:
+                return JsonResponse({'ok': False, 'message' : 'Display name too long'}, status=400)
+            profile.display_name=new_display_name
+        
+        if new_bio is not None:
+            if len(new_bio) > 200:
+                return JsonResponse({'ok' : False, 'message' : 'Bio too long'}, status=400)
+            profile.bio = new_bio
+
+        #5. Save Changes to the database
+        profile.save()
+
+        return JsonResponse({
+            'ok': True,
+            'message': 'Profile updated sucessfully',
+            'display_name' : profile.display_name,
+            'bio' : profile.bio
+        })
+    except json.JSONDecodeError:
+         return JsonResponse({'ok': False, 'message': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        print(f"Error updating profile: {e}")
+        return JsonResponse({'ok': False, 'message': 'Internal Server Error'}, status=500)
+
+@login_required
+@require_POST # only allow POST requests 
+def change_username(request):
+    try:
+        data = json.loads(request.body)
+        new_username = data.get('username', '').strip()
+        password = data.get('password','')
+        
+        #1. Verify Password
+        # Check_Password() is a built-in Django Function
+        if not request.user.check_password(password):
+            return JsonResponse({'ok': False, 'message': 'Incorrect password'}, status=403)
+        #2. Validate Username(Uniqueness,length,patterns)
+        if User.objects.filter(username__iexact=new_username).exists():
+            return JsonResponse({'ok': False, 'message': 'Username already  taken'}, status=400)
+        if len(new_username) > 32:
+            return JsonResponse({'ok': False, 'message' : 'Username too long'}, status=400)
+        if len(new_username) < 3:
+            return JsonResponse({'ok': False, 'message' : 'Username too short'}, status=400)
+        
+        #3. Save
+        request.user.username= new_username
+        request.user.save()
+        update_session_auth_hash(request,request.user)
+        return JsonResponse({
+            'ok': True,
+            'message': 'Username Changed'
+        })
+    except json.JSONDecodeError:
+         return JsonResponse({'ok': False, 'message': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        print(f"Error updating profile: {e}")
+        return JsonResponse({'ok': False, 'message': 'Internal Server Error'}, status=500)
+
+        

@@ -1,20 +1,452 @@
 {% load static %}
 
-  <div id="profile-modal">
-      <div class="window">
-  <div class="title-bar">
-    <div class="title-bar-text">Profile</div>
-    <div class="title-bar-controls">
-      <button id="profile-close-button" aria-label="Close"></button>
+<div id="profile-modal">
+    <div class="window">
+        <div class="title-bar">
+            <div class="title-bar-text">Profile</div>
+            <div class="title-bar-controls">
+                <button id="profile-close-button" aria-label="Close"></button>
+            </div>
+        </div>
+        <div class="window-body" style="display: flex; gap: 6px; padding: 6px; height: 400px;">
+
+            <!-- Sidebar as a vertical tab list -->
+            <div class="window">
+                <div class="profile-sidebar">
+
+                    <div class="sidebar-item active" data-tab="profile">
+                        <div class="sidebar-content">
+                            <img src="{% static '/profile/image/avatar-sidebar.png' %}" alt="">
+                            <span>Profile</span>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-item" data-tab="account">
+                        <div class="sidebar-content">
+                            <img src="{% static '/profile/image/account-sidebar.png' %}" alt="">
+                            <span>Account</span>
+                        </div>
+                    </div>
+
+                    <div class="sidebar-item">
+                        <div class="sidebar-content">
+                            <img src="{% static '/profile/image/appearance-sidebar.png' %}" alt="">
+                            <span>Appearance</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Editor panel -->
+            <div class="window" style="width: 320px">
+                <div class="window-body">
+
+                    <!-- 
+                    ░█████████  ░█████████    ░██████   ░██████████░██████░██         ░██████████ 
+                    ░██     ░██ ░██     ░██  ░██   ░██  ░██          ░██  ░██         ░██         
+                    ░██     ░██ ░██     ░██ ░██     ░██ ░██          ░██  ░██         ░██         
+                    ░█████████  ░█████████  ░██     ░██ ░█████████   ░██  ░██         ░█████████  
+                    ░██         ░██   ░██   ░██     ░██ ░██          ░██  ░██         ░██         
+                    ░██         ░██    ░██   ░██   ░██  ░██          ░██  ░██         ░██         
+                    ░██         ░██     ░██   ░██████   ░██        ░██████░██████████ ░██████████ 
+                    -->
+
+                    <div class="editor-page" id="editor-profile">
+
+                        <div class="setting-group">
+
+                            <label>Display Name</label>
+
+                            <div class="input-row">
+
+                                <input
+                                    id="display-name-input"
+                                    type="text"
+                                    maxlength="32"
+                                    value="{{request.user.profile.display_name}}"
+                                >
+
+                                <div
+                                    id="editor-display-name-counter"
+                                    class="setting-counter"
+                                >
+                                    0/32
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="setting-group">
+                            <label>Avatar</label>
+                            <div class="button-row">
+                                <button id="change-avatar-button">
+                                    Change Avatar
+                                </button>
+
+                                <button id="remove-avatar-button">
+                                    Remove Avatar
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="setting-group">
+                            <label>
+                                Avatar Decoration
+                            </label>
+                            <button id="change-decoration-button">
+                                Change Decoration
+                            </button>
+                        </div>
+
+                        <div class="setting-group">
+
+                            <div class="setting-header">
+                                <label>Bio</label>
+                            </div>
+
+                            <div class="bio-container">
+
+                                <textarea
+                                    id="bio-input"
+                                    class="bio-textarea"
+                                    rows="8"
+                                    maxlength="200"
+                                ></textarea>
+
+                                <div
+                                    id="bio-text-counter"
+                                    class="bio-counter"
+                                >
+                                    0/200
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="setting-group">
+                            <label>Banner</label>
+                            <div class="button-row">
+                                <button id="change-banner-button">
+                                    Change Banner
+                                </button>
+
+                                <button id="remove-banner-button">
+                                    Remove Banner
+                                </button>
+                            </div>
+                        </div>
+
+                    </div>
+
+                    <!--
+                       ░███      ░██████    ░██████    ░██████   ░██     ░██ ░███    ░██ ░██████████
+                      ░██░██    ░██   ░██  ░██   ░██  ░██   ░██  ░██     ░██ ░████   ░██     ░██    
+                     ░██  ░██  ░██        ░██        ░██     ░██ ░██     ░██ ░██░██  ░██     ░██    
+                    ░█████████ ░██        ░██        ░██     ░██ ░██     ░██ ░██ ░██ ░██     ░██    
+                    ░██    ░██ ░██        ░██        ░██     ░██ ░██     ░██ ░██  ░██░██     ░██    
+                    ░██    ░██  ░██   ░██  ░██   ░██  ░██   ░██   ░██   ░██  ░██   ░████     ░██    
+                    ░██    ░██   ░██████    ░██████    ░██████     ░██████   ░██    ░███     ░██                                                                                   
+                    -->
+
+                    <div class="editor-page active" id="editor-account">
+
+                        <div class="setting-group">
+
+                            <label>Username</label>
+
+                            <div class="input-row">
+
+                                <input
+                                    id="username-input"
+                                    type="text"
+                                    value="{{request.user.username}}"
+                                    disabled
+                                >
+
+                                <button id="edit-username-button" class="icon-button">
+                                    <img
+                                        src="{% static '/profile/image/pencil-icon.png' %}"
+                                        alt="Edit"
+                                    >
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                        <div class="setting-group">
+
+                            <label>Email</label>
+
+                            <div class="input-row">
+
+                                <input
+                                    id="email-input"
+                                    type="email"
+                                    value="{{request.user.email}}"
+                                    disabled
+                                >
+
+                                <button id="edit-email-button" class="icon-button">
+                                    <img
+                                        src="{% static '/profile/image/pencil-icon.png' %}"
+                                        alt="Edit"
+                                    >
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                        <div class="setting-group">
+
+                            <label>Password</label>
+
+                            <button id="edit-password-button" class="edit-password-button">
+                                Change Password
+                            </button>
+
+                        </div>
+                        
+                        <div class="setting-group">
+
+                        <button class="delete-button">
+                            Delete Account
+                        </button>
+
+                        </div>
+
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Preview panel -->
+            <div class="window" style="width: 320px">
+                <div class="title-bar">
+                    <div class="title-bar-text">Preview</div>
+                </div>
+                <div class="window-body">
+
+                </div>
+            </div>
+
+        </div>
     </div>
-  </div>
-  <div class="window-body">
-    hi
-      </div>
-
-    </div>
-
-
-  </div>
 </div>
-  </div>
+
+
+<!-- USERNAME MODAL -->
+<div id="username-modal" class="modal-overlay">
+
+    <div class="window">
+
+        <div class="title-bar">
+            <div class="title-bar-text">
+                Change Username
+            </div>
+        </div>
+
+        <div class="window-body">
+
+        <div class="setting-group">
+
+            <label>Username<span class="required-marker" aria-hidden="true">*</span><span id="new-username-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></label>
+            
+            <div class="input-row">
+                <input
+                    id="new-username-input"
+                    type="text"
+                    maxlength=32
+                    value="{{request.user.username}}"
+                >
+
+                <div
+                    id="new-username-counter"
+                    class="setting-counter"
+                >
+                    0/32
+                </div>
+            </div>
+
+            <p id="username-help" class="username-help" aria-live="polite">
+                Username must be 3-32 characters
+            </p>
+
+        </div>
+
+        <div class="setting-group">
+
+            <label>Current Password<span class="required-marker" aria-hidden="true">*</span><span id="username-password-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></label>
+
+            <input
+                id="username-password-input"
+                type="password"
+            >
+
+        </div>
+
+            <div class="modal-buttons">
+
+                <button
+                    id="username-cancel-button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    id="username-save-button"
+                >
+                    Done
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+<!-- EMAIL MODAL -->
+<div id="email-modal" class="modal-overlay">
+
+    <div class="window">
+
+        <div class="title-bar">
+            <div class="title-bar-text">
+                Change Email
+            </div>
+        </div>
+
+        <div class="window-body">
+
+        <div class="setting-group">
+
+            <label>Email<span class="required-marker" aria-hidden="true">*</span><span id="new-email-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></label>
+
+            <input
+                id="new-email-input"
+                type="text"
+                value="{{request.user.email}}"
+            >
+            
+            <p id="email-help" class="email-help" aria-live="polite">
+                Please enter your email
+            </p>
+
+        </div>
+
+        <div class="setting-group">
+
+            <label>Current Password<span class="required-marker" aria-hidden="true">*</span><span id="email-password-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></label>
+
+            <input
+                id="email-password-input"
+                type="password"
+            >
+
+        </div>
+
+            <div class="modal-buttons">
+
+                <button
+                    id="email-cancel-button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    id="email-save-button"
+                >
+                    Done
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+
+
+
+<!-- Password MODAL -->
+<div id="password-modal" class="modal-overlay">
+
+    <div class="window">
+
+        <div class="title-bar">
+            <div class="title-bar-text">
+                Change Password
+            </div>
+        </div>
+
+        <div class="window-body">
+
+        <div class="setting-group">
+
+            <label>Current Password<span class="required-marker" aria-hidden="true">*</span><span id="current-password-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></label>
+
+            <input
+                id="current-password-input"
+                type="password"
+            >
+            
+            <p id="current-password-help" class="password-help" aria-live="polite"></p>
+
+        </div>
+
+        <div class="setting-group">
+
+            <label>New Password<span class="required-marker" aria-hidden="true">*</span><span id="new-password-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></label>
+
+            <input
+                id="new-password-input"
+                type="password"
+            >
+            
+            <p id="new-password-help" class="password-help" aria-live="polite">
+                Password must be at least 8 characters
+            </p>
+
+        </div>
+
+        <div class="setting-group">
+
+            <label>Confirm New Password<span class="required-marker" aria-hidden="true">*</span><span id="confirm-password-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></label>
+
+            <input
+                id="confirm-password-input"
+                type="password"
+            >
+            
+            <p id="confirm-password-help" class="password-help" aria-live="polite"></p>
+
+        </div>
+
+            <div class="modal-buttons">
+
+                <button
+                    id="password-cancel-button"
+                >
+                    Cancel
+                </button>
+
+                <button
+                    id="password-save-button"
+                >
+                    Done
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</div>

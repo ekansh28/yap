@@ -9,5 +9,6 @@ urlpatterns = [
     # API endpoint that consumes the token
     path('api/verify-email/', views.verify_email_token, name='verify_email_token'),
     # Development-only endpoint to preview the verification email template
-
+    path('api/profile/update/', views.update_profile, name='update_profile'),
+    path('api/profile/change_username/', views.change_username, name='change_username'),
 ]

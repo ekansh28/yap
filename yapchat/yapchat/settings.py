@@ -91,7 +91,7 @@ WSGI_APPLICATION = 'yapchat.wsgi.application'
 DATABASES = {
     "default": dj_database_url.config(
     default='postgresql://postgres.axsgujztyebpophnompt:npg_Kl2nZyFIAgE4@aws-1-us-east-2.pooler.supabase.com:5432/postgres',
-    conn_max_age=600,
+    conn_max_age=0,
     ssl_require=True
     )
 }

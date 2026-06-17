@@ -75,9 +75,11 @@
     <script type="module" src="{% static 'js/LandingPage/main.js' %}"></script>
     {% if not request.user.is_authenticated %}
         <script src="{% static 'accounts/js/verify_email.js' %}"></script>
-        <script src="{% static 'accounts/js/profile_modal.js' %}"></script>
+        <script type="module" src="{% static 'accounts/js/auth_modal.js' %}?v=1"></script>
+        <script type="module" src="{% static 'accounts/js/profile_modal.js' %}?v=1"></script>
     {% else %}
-        <script src="{% static 'accounts/js/profile_modal.js' %}"></script>
+        <script type="module" src="{% static 'accounts/js/auth_modal.js' %}?v=1"></script>
+        <script type="module" src="{% static 'accounts/js/profile_modal.js' %}?v=1"></script>
     {% endif %}
 
 </body>
