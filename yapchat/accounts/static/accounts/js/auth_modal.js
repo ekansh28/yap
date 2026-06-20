@@ -1,8 +1,16 @@
-
-
 const authButton = document.getElementById("auth-button");
 const authModal = document.getElementById("auth-modal");
 const closeButton = document.getElementById("close-button");
+
+// States
+const registrationState = document.getElementById("registration-state");
+const loginState = document.getElementById("login-state");
+
+// Switchers
+const showLogin = document.getElementById("show-login");
+const showRegister = document.getElementById("show-register");
+
+// Registration Elements
 const submitButton = document.getElementById("submit-button");
 const emailInput = document.getElementById("email-input");
 const emailHelp = document.getElementById("email-help");
@@ -15,6 +23,13 @@ const emailRequiredWarning = document.getElementById("email-required-warning");
 const usernameRequiredWarning = document.getElementById("username-required-warning");
 const passwordRequiredWarning = document.getElementById("password-required-warning");
 const dobRequiredWarning = document.getElementById("dob-required-warning");
+
+// Login Elements
+const loginButton = document.getElementById("login-button");
+const loginEmailInput = document.getElementById("login-email-input");
+const loginPasswordInput = document.getElementById("login-password-input");
+
+
 export const emailRequiredMessage = "Please enter your email";
 export const usernameRequiredMessage = "Please enter your username";
 export const usernameRulesMessage = "Please use only numbers, letters, underscores _ or periods.";
@@ -26,6 +41,7 @@ export const dobMessage = "You must be at least 13 years old to register";
 export const dobRequiredMessage = "Please select your date of birth";
 export const dobInvalidMessage = "Please enter a valid date of birth";
 const registerEndpoint = "/api/register/";
+const loginEndpoint = "/api/login/";
 export const usernamePattern = /^[A-Za-z0-9_.]*$/;
 
 let shouldShowEmailRequiredError = false;
@@ -34,6 +50,33 @@ let shouldShowUsernameLengthError = false;
 let shouldShowPasswordRequiredError = false;
 let shouldShowPasswordError = false;
 let shouldShowDobError = false;
+
+//#region Auth State Switching
+function showState(state) {
+    if (state === 'login') {
+        loginState.classList.add('is-active');
+        registrationState.classList.remove('is-active');
+    } else {
+        registrationState.classList.add('is-active');
+        loginState.classList.remove('is-active');
+    }
+}
+
+if (showLogin) {
+    showLogin.addEventListener('click', (e) => {
+        e.preventDefault();
+        showState('login');
+    });
+}
+
+if (showRegister) {
+    showRegister.addEventListener('click', (e) => {
+        e.preventDefault();
+        showState('register');
+    });
+}
+//#endregion
+
 
 //#region Date of Birth Elements
 const dobDay = document.getElementById("dob-day");
@@ -45,6 +88,25 @@ const months = [
     "July", "August", "September", "October", "November", "December"
 ];
 
+function setButtonLoading(button, isLoading) {
+    if (!button) return;
+
+    const originalContent = button.dataset.originalHTML;
+
+    if (isLoading) {
+        if (!originalContent) {
+            button.dataset.originalHTML = button.innerHTML;
+        }
+        button.disabled = true;
+        button.innerHTML = '<img src="/static/accounts/images/loading-spinner.gif" alt="Loading..." style="height: 14px; vertical-align: middle;">';
+    } else {
+        if (originalContent) {
+            button.innerHTML = originalContent;
+            delete button.dataset.originalHTML;
+        }
+        button.disabled = false;
+    }
+}
 
 function populateDobFields() {
     if (!dobDay || !dobMonth || !dobYear) {
@@ -53,7 +115,6 @@ function populateDobFields() {
     for (let day = 1; day <= 31; day++) {
         const option = document.createElement("option");
         option.value = String(day).padStart(2, "0");
-        //padStart is used to ensure single digit days are displayed as 01, 02, etc.
         option.textContent = String(day).padStart(2, "0");
         dobDay.appendChild(option);
     }
@@ -64,7 +125,7 @@ function populateDobFields() {
         option.textContent = month;
         dobMonth.appendChild(option);
     });
-    
+
     const currentYear = new Date().getFullYear();
     for (let year = currentYear; year >= 1900; year--) {
         const option = document.createElement("option");
@@ -81,13 +142,11 @@ function updateDobValue() {
     const day = dobDay.value;
     const month = dobMonth.value;
     const year = dobYear.value;
-    if(!day || !month || !year) {
+    if (!day || !month || !year) {
         dobInput.value = "";
         updateDobHelp();
         return;
     }
-    // Format the date as YYYY-MM-DD for the hidden input 
-    // because Django expects date inputs in this format for proper validation and processing.
     dobInput.value = `${year}-${month}-${day}`;
     updateDobHelp();
 }
@@ -104,11 +163,12 @@ populateDobFields();
 
 
 //#region OPEN-CLOSE BUTTON LOGIC FOR AUTHENTICATION MODAL
-// Function to open the authentication modal
 function openAuthModal() {
-    if (authModal) authModal.classList.add("is-open");
+    if (authModal) {
+        authModal.classList.add("is-open");
+        showState('login'); // Default to login view
+    }
 }
-// Function to close the authentication modal
 function closeAuthModal() {
     if (authModal) authModal.classList.remove("is-open");
 }
@@ -166,7 +226,7 @@ if (displayNameInput && displayNameCounter) {
         displayNameInput.classList.toggle("has-text", currentLength > 0);
         updateDisplayNameHelp();
     };
-    
+
     displayNameInput.addEventListener("input", updateDisplayNameCounter);
     displayNameInput.addEventListener("focus", updateDisplayNameHelp);
     displayNameInput.addEventListener("blur", updateDisplayNameHelp);
@@ -186,7 +246,7 @@ if (passwordInput) {
 //#region Username Input Validation
 
 export function setFieldHelp(helpElement, message, isVisible, state = "info") {
-    if(!helpElement) return;
+    if (!helpElement) return;
     helpElement.textContent = message;
     helpElement.classList.toggle("is-visible", isVisible);
     helpElement.classList.toggle("is-error", state === "error");
@@ -226,36 +286,47 @@ export function getCSRFToken() {
     return "";
 }
 
-function applyServerErrors(errors = {}) {
-    if (errors.email) {
-        setFieldHelp(emailHelp, errors.email, true, "error");
-        setRequiredWarning(emailRequiredWarning, true);
-    }
+function applyServerErrors(errors = {}, isLogin = false) {
+    if (isLogin) {
+        if (errors.detail) {
+            // Generic login error
+            const loginErrorHelp = document.getElementById('login-error-help'); // Assuming you add this element
+            if (loginErrorHelp) {
+                setFieldHelp(loginErrorHelp, errors.detail, true, "error");
+            }
+        }
+    } else {
+        if (errors.email) {
+            setFieldHelp(emailHelp, errors.email, true, "error");
+            setRequiredWarning(emailRequiredWarning, true);
+        }
 
-    if (errors.username) {
-        setFieldHelp(usernameHelp, errors.username, true, "error");
-        setRequiredWarning(usernameRequiredWarning, true);
-    }
+        if (errors.username) {
+            setFieldHelp(usernameHelp, errors.username, true, "error");
+            setRequiredWarning(usernameRequiredWarning, true);
+        }
 
-    if (errors.display_name) {
-        setFieldHelp(displayNameHelp, errors.display_name, true, "error");
-    }
+        if (errors.display_name) {
+            setFieldHelp(displayNameHelp, errors.display_name, true, "error");
+        }
 
-    if (errors.password) {
-        setFieldHelp(passwordHelp, errors.password, true, "error");
-        setRequiredWarning(passwordRequiredWarning, true);
-    }
+        if (errors.password) {
+            setFieldHelp(passwordHelp, errors.password, true, "error");
+            setRequiredWarning(passwordRequiredWarning, true);
+        }
 
-    if (errors.date_of_birth) {
-        setFieldHelp(dobHelp, errors.date_of_birth, true, "error");
-        setRequiredWarning(dobRequiredWarning, true);
+        if (errors.date_of_birth) {
+            setFieldHelp(dobHelp, errors.date_of_birth, true, "error");
+            setRequiredWarning(dobRequiredWarning, true);
+        }
     }
 }
 
-function showRegistrationError(message) {
+function showAuthError(message, isLogin = false) {
+    const helpElement = isLogin ? document.getElementById('login-error-help') : emailHelp;
     setFieldHelp(
-        emailHelp,
-        message || "Registration failed. Please try again.",
+        helpElement,
+        message || "Authentication failed. Please try again.",
         true,
         "error"
     );
@@ -271,7 +342,7 @@ async function readJsonResponse(response) {
     const text = await response.text();
     return {
         ok: false,
-        message: text ? "The server returned an unexpected error." : "Registration failed.",
+        message: text ? "The server returned an unexpected error." : "Request failed.",
     };
 }
 
@@ -441,9 +512,35 @@ function updateDobHelp() {
 }
 //#endregion
 
+//#region Enter Key Submission
+const registrationInputs = [emailInput, displayNameInput, usernameInput, passwordInput, dobDay, dobMonth, dobYear];
+const loginInputs = [loginEmailInput, loginPasswordInput];
+
+function handleEnterKey(event, button) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        button.click();
+    }
+}
+
+registrationInputs.forEach(input => {
+    if (input) {
+        input.addEventListener('keydown', (event) => handleEnterKey(event, submitButton));
+    }
+});
+
+loginInputs.forEach(input => {
+    if (input) {
+        input.addEventListener('keydown', (event) => handleEnterKey(event, loginButton));
+    }
+});
+//#endregion
+
+
 //#region Submit Validation Logic
 if (submitButton && usernameInput) {
     submitButton.addEventListener("click", async (event) => {
+        event.preventDefault();
         const isEmailEmpty = !emailInput || emailInput.value.trim().length === 0;
         const usernameLength = usernameInput.value.trim().length;
         const isUsernameEmpty = usernameLength === 0;
@@ -459,7 +556,6 @@ if (submitButton && usernameInput) {
             (selectedDob instanceof Date && !isAtLeast13(selectedDob));
 
         if (isEmailEmpty || isUsernameInvalid || isPasswordInvalid || isDobInvalid) {
-            event.preventDefault();
             shouldShowEmailRequiredError = isEmailEmpty;
             shouldShowUsernameRequiredError = isUsernameEmpty;
             shouldShowUsernameLengthError = isTooShort;
@@ -491,7 +587,6 @@ if (submitButton && usernameInput) {
             if (isDobInvalid) shakeFieldHelp(dobHelp);
             if (selectedDob === null) shakeRequiredWarning(dobRequiredWarning);
         } else {
-            event.preventDefault();
             const payload = {
                 email: emailInput.value.trim(),
                 display_name: displayNameInput ? displayNameInput.value.trim() : "",
@@ -499,6 +594,8 @@ if (submitButton && usernameInput) {
                 password: passwordInput ? passwordInput.value : "",
                 date_of_birth: dobInput ? dobInput.value : "",
             };
+
+            setButtonLoading(submitButton, true);
 
             try {
                 const response = await fetch(registerEndpoint, {
@@ -515,7 +612,7 @@ if (submitButton && usernameInput) {
                 if (!response.ok || !data.ok) {
                     applyServerErrors(data.errors || {});
                     if (!Object.keys(data.errors || {}).length) {
-                        showRegistrationError(data.message);
+                        showAuthError(data.message);
                         console.error(data.detail || data.message || "Registration failed.");
                     }
                     return;
@@ -527,10 +624,64 @@ if (submitButton && usernameInput) {
                     console.error("Verify email state controller not found.");
                 }
             } catch (error) {
-                showRegistrationError("Registration request failed. Please try again.");
+                showAuthError("Registration request failed. Please try again.");
                 console.error("Registration request failed.", error);
+            } finally {
+                setButtonLoading(submitButton, false);
             }
         }
     });
 }
 
+if (loginButton) {
+    loginButton.addEventListener("click", async (event) => {
+        event.preventDefault();
+
+        const email = loginEmailInput.value.trim();
+        const password = loginPasswordInput.value;
+
+        if (!email || !password) {
+            showAuthError("Email/username and password are required.", true);
+            return;
+        }
+
+        const payload = {
+            login: email, // Assuming backend accepts 'login' field for email or username
+            password: password,
+        };
+
+        setButtonLoading(loginButton, true);
+
+        try {
+            const response = await fetch(loginEndpoint, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    "X-CSRFToken": getCSRFToken(),
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await readJsonResponse(response);
+
+            if (!response.ok || !data.ok) {
+                applyServerErrors(data.errors || { detail: "Invalid credentials." }, true);
+                if (!Object.keys(data.errors || {}).length) {
+                    showAuthError(data.message, true);
+                    console.error(data.detail || data.message || "Login failed.");
+                }
+                return;
+            }
+
+            // On success, close modal and reload the page to reflect logged-in state
+            closeAuthModal();
+            window.location.reload();
+
+        } catch (error) {
+            showAuthError("Login request failed. Please try again.", true);
+            console.error("Login request failed.", error);
+        } finally {
+            setButtonLoading(loginButton, false);
+        }
+    });
+}

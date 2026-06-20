@@ -4,16 +4,17 @@ from smtplib import SMTPException
 from time import perf_counter
 
 from django.conf import settings
-from django.contrib.auth import get_user_model
+from django.contrib.auth import authenticate, login, logout, get_user_model, update_session_auth_hash
 from django.contrib.auth.password_validation import validate_password
 from django.core.mail import BadHeaderError
 from django.core.exceptions import ValidationError
+
 from django.core.validators import validate_email
 from django.http import JsonResponse
 
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.http import require_POST
-from django.contrib.auth import update_session_auth_hash
+
 
 from django.shortcuts import render
 from django.urls import reverse
@@ -175,7 +176,7 @@ def register_user(request):
                     to_email=user.email,
                     username=user.profile.effective_display_name,
                     verification_url=verification_url,
-                    idempotency_key=f"verify-email/{user.pk}",
+                    idempotency_key=f"verify-email/{user.pk}/{timezone.now().timestamp()}",
                 )
                 print(f"[register] celery_publish: {perf_counter() - celery_started_at:.3f}s")
 
@@ -201,6 +202,38 @@ def register_user(request):
         },
         status=201,
     )
+
+@require_http_methods(["POST"])
+@csrf_protect
+def login_view(request):
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"ok": False, "message": "Invalid Request."}, status=400)
+
+    username_or_email = payload.get("login", "").strip()
+    password = payload.get("password", "")
+
+    if not username_or_email or not password:
+        return JsonResponse({"ok": False, "message": "Email/Username and password are required."}, status=400)
+
+    # Try to find user by username first, then by email
+    user = User.objects.filter(username__iexact=username_or_email).first()
+    if not user:
+        user = User.objects.filter(email__iexact=username_or_email).first()
+
+    if user:
+        # Always authenticate via username — Django's default backend requires it
+        authenticated_user = authenticate(request, username=user.username, password=password)
+    else:
+        authenticated_user = None
+
+    if authenticated_user is not None:
+        login(request, authenticated_user)
+        return JsonResponse({"ok": True, "message": "Login successful."})
+    else:
+        return JsonResponse({"ok": False, "message": "Invalid credentials."}, status=400)
+
 
 @require_http_methods(["POST"])
 @csrf_protect
@@ -299,9 +332,11 @@ def change_username(request):
             return JsonResponse({'ok': False, 'message' : 'Username too short'}, status=400)
         
         #3. Save
-        request.user.username= new_username
+        request.user.username = new_username
         request.user.save()
-        update_session_auth_hash(request,request.user)
+        # NOTE: do NOT call update_session_auth_hash here — that is only for password changes.
+        # Username changes do not affect the session auth hash and calling it here
+        # can cause the session to be invalidated, logging the user out.
         return JsonResponse({
             'ok': True,
             'message': 'Username Changed'
@@ -312,4 +347,121 @@ def change_username(request):
         print(f"Error updating profile: {e}")
         return JsonResponse({'ok': False, 'message': 'Internal Server Error'}, status=500)
 
+@login_required
+@require_POST
+def change_email(request):
+    """
+    Changes the user's email, marks it unverified and sends a verification link
+    """
+    try:
+        #1. Parse the JSON data
+        data = json.loads(request.body)
+        new_email = data.get('email','').strip()
+        password = data.get('password', '')
+
+        #2. Security check: Always verify password before sensitive changes
+        if not request.user.check_password(password):
+            return JsonResponse({'ok': False, 'message': 'Incorrect password'}, status=403)
         
+        #3. Basic Validations
+        if not new_email:
+            return JsonResponse({'ok': False, 'message': 'Email is required'}, status=400)
+
+        # If email is the same and already verified, do nothing
+        if new_email.lower() == request.user.email.lower() and request.user.email_verified:
+            return JsonResponse({'ok': True, 'message': 'This email is already verified.'})
+
+        # Check if another user already has this email
+        if User.objects.filter(email__iexact=new_email).exclude(pk=request.user.pk).exists():
+            return JsonResponse({'ok': False, 'message': 'Email already in use'}, status=400)
+        
+        #4. Atomic transaction: Ensures DB update and token creation happen together
+        with transaction.atomic():
+            #update user record
+            request.user.email = new_email
+            request.user.email_verified = False # set to false until they verify
+            request.user.save()
+            
+            # Generate a new verification token using existing service
+            # This creates a hashed token in the EmailVerificationToken table
+            _, raw_token = create_email_verification_token(request.user)
+
+            #build the absolute URL for the verification page
+            # e.g., https://yap.chat/verify/#token=abc123xyz
+            verification_url = request.build_absolute_uri(reverse("verify_email_page"))
+            verification_url =  f"{verification_url}#token={raw_token}"
+
+            #5. Queue email : using celery to send the email in background
+            # we use transaction.on_commit to ensure email is only sent if the DB sae succeeds
+            def queue_verification_email():
+                send_verification_email_task.delay(
+                    to_email= request.user.email,
+                    username= request.user.profile.effective_display_name,
+                    verification_url = verification_url,
+                    idempotency_key=f"verify-email-change/{request.user.pk}/{timezone.now().timestamp()}",)
+            transaction.on_commit(queue_verification_email)
+        return JsonResponse({'ok': True, 'message': 'Email updated. Please check your inbox for verification.'})
+    except Exception as e:
+        print(f'Error in change_email: {e}')
+        return JsonResponse({'ok': False, 'message': 'Internal Server Error'}, status=500)
+
+@login_required
+@require_POST
+def change_password(request):
+    try:
+        #1. Parse the incoming Json
+        data = json.loads(request.body)
+        current_password = data.get('current_password')
+        new_password = data.get('new_password')
+        confirm_password = data.get('confirm_password')
+
+        #2. security check: verify current password
+        if not request.user.check_password(current_password):
+            return JsonResponse({'ok': False, 'message': 'Incorrect current password.'},
+        status=400)
+        
+        # 3. Validation: Ensure new passwords match and are not the same as the old one
+        if new_password != confirm_password:
+            return JsonResponse({'ok': False, 'message': 'New passwords do not match.'},
+            status=400)
+        
+        if new_password == current_password:
+            return JsonResponse({'ok': False, 'message': 'New password cannot be the same as the old one.'}, status=400)
+        
+        # 4. Use Django's built-in password validation to ensure it's strong enough
+        try:
+            validate_password(new_password, request.user)
+        except ValidationError as e:
+            # The error messages from the validator are returned as a list
+            return JsonResponse({'ok': False, 'message': e.messages[0]}, status=400)
+        # 5. If all checks pass, set the new password
+        request.user.set_password(new_password)
+        request.user.save()
+
+        # 6. Important: Update the user's session to prevent them from being logged out
+        update_session_auth_hash(request, request.user)
+
+        # 7. Return a success response
+        return JsonResponse({'ok': True, 'message': 'Password changed successfully.'})
+    except Exception as e:
+        return JsonResponse({'ok': False, 'message': 'An unexpected error occurred.'}, status=500)
+    
+@login_required
+@require_POST
+def delete_account(request):
+    try:
+        data = json.loads(request.body)
+        password = data.get('password', '')
+
+        if not request.user.check_password(password):
+            return JsonResponse({'ok': False, 'message': 'Incorrect password'}, status=403)
+
+        request.user.delete()
+        logout(request)
+
+        return JsonResponse({'ok': True, 'message': 'Account deleted successfully.'})
+    except json.JSONDecodeError:
+        return JsonResponse({'ok': False, 'message': 'Invalid JSON data'}, status=400)
+    except Exception as e:
+        print(f"Error deleting account: {e}")
+        return JsonResponse({'ok': False, 'message': 'Internal Server Error'}, status=500)

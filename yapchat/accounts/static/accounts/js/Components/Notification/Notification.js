@@ -2,13 +2,6 @@
  * Reusable Notification Component
  *
  * Displays toast notifications throughout the application.
- *
- * Usage:
- *
- * Notification.success("Connected!");
- * Notification.error("Connection failed.");
- * Notification.warning("Maximum 5 tags allowed.");
- * Notification.info("Searching for a partner...");
  */
 
 class Notification {
@@ -26,7 +19,11 @@ class Notification {
     /**
      * Shows a notification
      */
-    static show({ title = 'Title', message = '', type = 'info', duration = 3000 }) {
+    static show({ title = 'Title', message = '', type = 'info', duration }) {
+        // Handle "persist" mode: if duration is null, 0, or specifically false, we don't auto-hide
+        const isPersistent = duration === null || duration === 0 || duration === false;
+        const finalDuration = !isPersistent ? ((typeof duration === 'number' && !isNaN(duration)) ? duration : 3000) : null;
+
         this.initialize();
         const container = document.getElementById('notification-container');
 
@@ -39,15 +36,12 @@ class Notification {
             });
 
         if (existing) {
-            // Get the inner window element
             const windowEl = existing.querySelector('.notification-window');
             if (windowEl) {
-                // Remove any existing shake class and force reflow on the window element
                 windowEl.classList.remove('shake');
-                void windowEl.offsetWidth;        // reliable reflow
+                void windowEl.offsetWidth;
                 windowEl.classList.add('shake');
 
-                // Remove shake class after animation ends
                 const onAnimationEnd = () => {
                     windowEl.classList.remove('shake');
                     windowEl.removeEventListener('animationend', onAnimationEnd);
@@ -55,14 +49,20 @@ class Notification {
                 windowEl.addEventListener('animationend', onAnimationEnd, { once: true });
             }
 
-            // Reset timer
+            // Reset timer ONLY if it's not persistent
             clearTimeout(existing.notificationTimeout);
-            existing.notificationTimeout = setTimeout(() => {
-                existing.classList.add('removing');
-                setTimeout(() => existing.remove(), 250);
-            }, duration);
+            if (!isPersistent) {
+                existing.notificationTimeout = setTimeout(() => {
+                    existing.classList.add('removing');
+                    setTimeout(() => existing.remove(), 250);
+                }, finalDuration);
+            }
             return;
         }
+
+        // Determine icon path
+        const iconName = type === 'warning' ? 'notif-warning.png' : `${type}.png`;
+        const iconPath = `/static/accounts/images/${iconName}`;
 
         // Create new notification
         const notification = document.createElement('div');
@@ -70,7 +70,10 @@ class Notification {
         notification.innerHTML = `
             <div class="window notification-window">
                 <div class="title-bar notification-${type}">
-                    <div class="title-bar-text">${title}</div>
+                    <div class="title-bar-text" style="display: flex; align-items: center; gap: 4px;">
+                        <img src="${iconPath}" alt="" style="width: 14px; height: 14px; image-rendering: pixelated;">
+                        ${title}
+                    </div>
                     <div class="title-bar-controls">
                         <button class="notification-close" aria-label="Close"></button>
                     </div>
@@ -81,7 +84,6 @@ class Notification {
             </div>
         `;
 
-        // Close button
         const closeButton = notification.querySelector('.notification-close');
         if (closeButton) {
             closeButton.addEventListener('click', () => {
@@ -92,40 +94,44 @@ class Notification {
 
         container.appendChild(notification);
 
-        // Auto-remove timer
-        notification.notificationTimeout = setTimeout(() => {
-            notification.classList.add('removing');
-            setTimeout(() => notification.remove(), 250);
-        }, duration);
-
-        // Pause on hover
-        notification.addEventListener('mouseenter', () => {
-            clearTimeout(notification.notificationTimeout);
-        });
-
-        // Resume on leave
-        notification.addEventListener('mouseleave', () => {
+        // Auto-remove timer (Skip if persistent)
+        if (!isPersistent) {
             notification.notificationTimeout = setTimeout(() => {
                 notification.classList.add('removing');
                 setTimeout(() => notification.remove(), 250);
-            }, duration);
-        });
+            }, finalDuration);
+
+            notification.addEventListener('mouseenter', () => {
+                clearTimeout(notification.notificationTimeout);
+            });
+
+            notification.addEventListener('mouseleave', () => {
+                notification.notificationTimeout = setTimeout(() => {
+                    notification.classList.add('removing');
+                    setTimeout(() => notification.remove(), 250);
+                }, finalDuration);
+            });
+        }
     }
 
     // Helper methods
-    static success(message, duration) {
+    static success(message, options = {}) {
+        const duration = typeof options === 'number' ? options : options.duration;
         this.show({ title: 'Success', message, type: 'success', duration });
     }
 
-    static error(message, duration) {
+    static error(message, options = {}) {
+        const duration = typeof options === 'number' ? options : options.duration;
         this.show({ title: 'Error', message, type: 'error', duration });
     }
 
-    static warning(message, duration) {
+    static warning(message, options = {}) {
+        const duration = typeof options === 'number' ? options : options.duration;
         this.show({ title: 'Warning', message, type: 'warning', duration });
     }
 
-    static info(message, duration) {
+    static info(message, options = {}) {
+        const duration = typeof options === 'number' ? options : options.duration;
         this.show({ title: 'Info', message, type: 'info', duration });
     }
 }

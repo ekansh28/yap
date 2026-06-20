@@ -1,0 +1,100 @@
+{% load static %}
+
+<link
+    rel="stylesheet"
+    href="{% static 'profile/css/profile_card.css' %}"
+>
+
+<div class="profile-card">
+
+    <div class="profile-banner">
+
+        <!-- Banner image will go here later -->
+
+    </div>
+
+    <div class="profile-avatar-container">
+
+        <img
+            id="profile-preview-avatar"
+            class="profile-avatar"
+            src="{% static 'image/default-avatar.png' %}"
+            alt="Avatar"
+        >
+
+    </div>
+
+    <div class="profile-content">
+
+        <div
+            id="profile-preview-display-name"
+            class="profile-display-name"
+        >
+            Ekansh
+        </div>
+
+        <div
+            id="profile-preview-username"
+            class="profile-username"
+        >
+            @ekansh
+        </div>
+
+        <div
+            class="profile-badges"
+        >
+
+            <img
+                class="badge"
+                src="{% static 'profile/image/edit-icon.png' %}"
+                alt="Badge"
+                title="Badge"
+            >
+
+            <img
+                class="badge"
+                src="{% static 'profile/image/edit-icon.png' %}"
+                alt="Badge"
+                title="Badge"
+            >
+
+            <img
+                class="badge"
+                src="{% static 'profile/image/edit-icon.png' %}"
+                alt="Badge"
+                title="Badge"
+            >
+
+            <img
+                class="badge"
+                src="{% static 'profile/image/edit-icon.png' %}"
+                alt="Badge"
+                title="Badge"
+            >
+
+        </div>
+
+        <div
+            id="profile-preview-pronouns"
+            class="profile-pronouns"
+        >
+            he/him
+        </div>
+
+        <div
+            id="profile-preview-status"
+            class="profile-status"
+        >
+            Listening to Music
+        </div>
+
+        <div
+            id="profile-preview-bio"
+            class="profile-bio"
+        >
+            
+        </div>
+
+    </div>
+
+</div>

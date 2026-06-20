@@ -10,116 +10,132 @@
     </div>
   </div>
   <div class="window-body">
-<!-- Registration Form -->
-    <div id="registration-state" class="auth-state is-active">
-    <!-- Email Field -->
-      <p>Email<span class="required-marker" aria-hidden="true">*</span><span id="email-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></p>
-      <div class="auth-input-wrapper no-counter">
-        <input
-        id="email-input" 
-        type="email"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        spellcheck="false"
-        >
-      </div>
-      <p id="email-help" class="email-help" aria-live="polite">
-            Please enter your email 
-        </p>
+    <!-- Registration Form -->
+    <div id="registration-state" class="auth-state">
+        <!-- Email Field -->
+        <p>Email<span class="required-marker" aria-hidden="true">*</span><span id="email-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></p>
+        <div class="auth-input-wrapper no-counter">
+            <input
+                id="email-input" 
+                type="email"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+            >
+        </div>
+        <p id="email-help" class="email-help" aria-live="polite">Please enter your email</p>
 
-    <!-- Display Name Field -->
-      <p>Display Name</p>
-      <div class="display-name-input-wrapper auth-input-wrapper">
-      <input
-        id="display-name-input"
-        type="text"
-        maxlength="32"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        spellcheck="false"
-        >
-        <span id="display-name-counter">0/32</span>
-      </div>
-      <p id="display-name-help" class="display-name-help" aria-live="polite">
-           This is how others see you. You can use special characters and emojis!
-        </p>
-    <!-- Username Field -->
-      <p>Username<span class="required-marker" aria-hidden="true">*</span><span id="username-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></p>
-      <div class="username-input-wrapper auth-input-wrapper">
-          <input
-              id="username-input"
-              type="text"
-              maxlength="32"
-              autocomplete="off"
-              autocorrect="off"
-              autocapitalize="off"
-              spellcheck="false"
-              >
-          <span id="username-counter">0/32</span>
-      </div>
-      <p id="username-help" class="username-help" aria-live="polite">
-            Username must be 3-32 characters
-        </p>
+        <!-- Display Name Field -->
+        <p>Display Name</p>
+        <div class="display-name-input-wrapper auth-input-wrapper">
+            <input
+                id="display-name-input"
+                type="text"
+                maxlength="32"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+            >
+            <span id="display-name-counter">0/32</span>
+        </div>
+        <p id="display-name-help" class="display-name-help" aria-live="polite">This is how others see you. You can use special characters and emojis!</p>
+        
+        <!-- Username Field -->
+        <p>Username<span class="required-marker" aria-hidden="true">*</span><span id="username-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></p>
+        <div class="username-input-wrapper auth-input-wrapper">
+            <input
+                id="username-input"
+                type="text"
+                maxlength="32"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+            >
+            <span id="username-counter">0/32</span>
+        </div>
+        <p id="username-help" class="username-help" aria-live="polite">Username must be 3-32 characters</p>
 
+        <!-- Password Field -->
+        <p>Password<span class="required-marker" aria-hidden="true">*</span><span id="password-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></p>
+        <div class="auth-input-wrapper no-counter">
+            <input
+                id="password-input"
+                type="password"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+            >
+        </div>
+        <p id="password-help" class="password-help" aria-live="polite">Password must be at least 8 characters</p>
 
-    <!-- Password Field -->
-      <p>Password<span class="required-marker" aria-hidden="true">*</span><span id="password-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></p>
-      <div class="auth-input-wrapper no-counter">
-      <input
-        id="password-input"
-        type="password"
-        autocomplete="off"
-        autocorrect="off"
-        autocapitalize="off"
-        spellcheck="false"
-        >
-      </div>
-      <p id="password-help" class="password-help" aria-live="polite">
-            Password must be at least 8 characters
-        </p>
-
-    <!-- Date of Birth Field -->
-      <p>Date of Birth<span class="required-marker" aria-hidden="true">*</span><span id="dob-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></p>
-      <div id="date-of-birth-wrapper" class="date-of-birth-wrapper">
-        <select id= "dob-day" aria-label="Day">
-          <option value="">Day</option>
-        </select>
-
-        <select id="dob-month" aria-label="Month">
-          <option value="">Month</option>
-        </select>
-
-        <select id="dob-year" aria-label="Year">
-          <option value="">Year</option>
-        </select>
-      </div>
-      <input id="date-of-birth-input" name="date_of_birth" type="hidden">
-   
-      <p id="dob-help" class="dob-help" aria-live="polite">
-            You must be at least 13 years old to register
-        </p>
-      <div class="auth-actions">
-        <button id="submit-button">Submit</button>
-        <div class="auth-divider" aria-hidden="true">--OR--</div>
-        <button type="button" class="social-auth-button">
-          <span class="social-auth-logo" aria-hidden="true">
-            <img src="{% static 'accounts/images/discord-logo.png' %}" alt="">
-          </span>
-          <span>Sign in with Discord</span>
-        </button>
-        <button type="button" class="social-auth-button">
-          <span class="social-auth-logo" aria-hidden="true">
-            <img src="{% static 'accounts/images/google-logo.png' %}" alt="">
-          </span>
-          <span>Sign in with Google</span>
-        </button>
-      </div>
-
+        <!-- Date of Birth Field -->
+        <p>Date of Birth<span class="required-marker" aria-hidden="true">*</span><span id="dob-required-warning" class="required-warning" aria-hidden="true"><img src="{% static 'accounts/images/warning.png' %}" alt=""></span></p>
+        <div id="date-of-birth-wrapper" class="date-of-birth-wrapper">
+            <select id= "dob-day" aria-label="Day">
+                <option value="">Day</option>
+            </select>
+            <select id="dob-month" aria-label="Month">
+                <option value="">Month</option>
+            </select>
+            <select id="dob-year" aria-label="Year">
+                <option value="">Year</option>
+            </select>
+        </div>
+        <input id="date-of-birth-input" name="date_of_birth" type="hidden">
+        <p id="dob-help" class="dob-help" aria-live="polite">You must be at least 13 years old to register</p>
+        
+        <div class="auth-actions">
+            <button id="submit-button">Submit</button>
+            <div class="auth-divider" aria-hidden="true">--OR--</div>
+            <button type="button" class="social-auth-button">
+                <span class="social-auth-logo" aria-hidden="true"><img src="{% static 'accounts/images/discord-logo.png' %}" alt=""></span>
+                <span>Sign in with Discord</span>
+            </button>
+            <button type="button" class="social-auth-button">
+                <span class="social-auth-logo" aria-hidden="true"><img src="{% static 'accounts/images/google-logo.png' %}" alt=""></span>
+                <span>Sign in with Google</span>
+            </button>
+        </div>
+        <p class="auth-switcher">Already have an account? <a href="#" id="show-login">Log In</a></p>
     </div>
-    {% include "accounts/components/verify_email.html" %}
 
-  </div>
+    <!-- Login Form -->
+    <div id="login-state" class="auth-state is-active">
+        <p>Email or Username<span class="required-marker" aria-hidden="true">*</span></p>
+        <div class="auth-input-wrapper no-counter">
+            <input
+                id="login-email-input"
+                type="text"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+            >
+        </div>
+        <p>Password<span class="required-marker" aria-hidden="true">*</span></p>
+        <div class="auth-input-wrapper no-counter">
+            <input
+                id="login-password-input"
+                type="password"
+                autocomplete="off"
+                autocorrect="off"
+                autocapitalize="off"
+                spellcheck="false"
+            >
+        </div>
+        <p id="login-error-help" class="email-help" aria-live="polite"></p>
+        <a href="#" class="forgot-password">Forgot your password?</a>
+        <div class="auth-actions">
+            <button id="login-button">Log In</button>
+        </div>
+        <p class="auth-switcher">Need an account? <a href="#" id="show-register">Register</a></p>
+    </div>
+
+    {% include "accounts/components/verify_email.html" %}
+</div>
 </div>
   </div>

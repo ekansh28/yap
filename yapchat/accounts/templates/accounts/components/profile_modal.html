@@ -1,4 +1,7 @@
 {% load static %}
+<script id="user-meta" type="application/json">
+    {"username": "{{ request.user.username|escapejs }}", "email": "{{ request.user.email|escapejs }}"}
+</script>
 
 <div id="profile-modal">
     <div class="window">
@@ -39,7 +42,7 @@
             </div>
 
             <!-- Editor panel -->
-            <div class="window" style="width: 320px">
+            <div class="window profile-editor-window" style="width: 320px">
                 <div class="window-body">
 
                     <!-- 
@@ -52,7 +55,7 @@
                     ░██         ░██     ░██   ░██████   ░██        ░██████░██████████ ░██████████ 
                     -->
 
-                    <div class="editor-page" id="editor-profile">
+                    <div class="editor-page active" id="editor-profile">
 
                         <div class="setting-group">
 
@@ -151,7 +154,7 @@
                     ░██    ░██   ░██████    ░██████    ░██████     ░██████   ░██    ░███     ░██                                                                                   
                     -->
 
-                    <div class="editor-page active" id="editor-account">
+                    <div class="editor-page " id="editor-account">
 
                         <div class="setting-group">
 
@@ -190,6 +193,9 @@
                                     disabled
                                 >
 
+                                 <span id="email-pending-badge" class="pending-badge" {% if request.user.email_verified %}style="display: none;"{% endif %}>
+                                    <img src="{% static '/accounts/images/notif-warning.png' %}" alt="Email Verification Pending" style="width: 12px; height: 12px; image-rendering: pixelated; vertical-align: middle;">
+                                </span>
                                 <button id="edit-email-button" class="icon-button">
                                     <img
                                         src="{% static '/profile/image/pencil-icon.png' %}"
@@ -213,7 +219,7 @@
                         
                         <div class="setting-group">
 
-                        <button class="delete-button">
+                        <button id="delete-account-button" class="delete-button">
                             Delete Account
                         </button>
 
@@ -222,6 +228,16 @@
                     </div>
 
                 </div>
+
+                <div id="profile-save-bar" class="profile-save-bar">
+    <span>You have unsaved changes.</span>
+
+    <div class="profile-save-bar-buttons">
+        <button id="profile-reset-button" class="save-bar-reset-button">Reset</button>
+        <button id="profile-save-button" class="save-bar-save-button">Save Changes</button>
+    </div>
+</div>
+
             </div>
 
             <!-- Preview panel -->
@@ -230,7 +246,11 @@
                     <div class="title-bar-text">Preview</div>
                 </div>
                 <div class="window-body">
+                    <div class="profile-preview-panel">
 
+                        {% include "profile/profile_card.html" %}
+
+                    </div>
                 </div>
             </div>
 
@@ -261,7 +281,7 @@
                     id="new-username-input"
                     type="text"
                     maxlength=32
-                    value="{{request.user.username}}"
+                    
                 >
 
                 <div
@@ -331,7 +351,7 @@
             <input
                 id="new-email-input"
                 type="text"
-                value="{{request.user.email}}"
+                
             >
             
             <p id="email-help" class="email-help" aria-live="polite">
@@ -449,4 +469,25 @@
 
     </div>
 
+</div>
+
+<!-- DELETE ACCOUNT MODAL -->
+<div id="delete-account-modal" class="modal-overlay">
+    <div class="window">
+        <div class="title-bar">
+            <div class="title-bar-text">Delete Account</div>
+        </div>
+        <div class="window-body">
+            <p>Are you sure you want to delete your account? This action cannot be undone.</p>
+            <div class="setting-group">
+                <label>Current Password<span class="required-marker" aria-hidden="true">*</span></label>
+                <input id="delete-password-input" type="password">
+                <p id="delete-account-help" class="help-text" aria-live="polite"></p>
+            </div>
+            <div class="modal-buttons">
+                <button id="delete-cancel-button">Cancel</button>
+                <button id="delete-confirm-button" class="delete-button">Delete Account</button>
+            </div>
+        </div>
+    </div>
 </div>

@@ -55,3 +55,53 @@
 .notification-window.shake {
     animation: shake 0.25s ease;
 }
+
+/* Color-coded backgrounds for the ENTIRE window */
+
+/* Success - Green */
+.Notification.success .window {
+    background: #008000 !important;
+    color: white !important;
+}
+.Notification.success .window-body {
+    background: transparent !important;
+    color: white !important;
+}
+.Notification.success .title-bar {
+    background: linear-gradient(90deg, #004000, #008000) !important;
+}
+
+/* Error - Red */
+.Notification.error .window {
+    background: #800000 !important;
+    color: white !important;
+}
+.Notification.error .window-body {
+    background: transparent !important;
+    color: white !important;
+}
+.Notification.error .title-bar {
+    background: linear-gradient(90deg, #400000, #800000) !important;
+}
+
+/* Warning - Yellow */
+.Notification.warning .window {
+    background: #ffff00 !important;
+    color: black !important;
+}
+.Notification.warning .window-body {
+    background: transparent !important;
+    color: black !important;
+}
+.Notification.warning .title-bar {
+    background: linear-gradient(90deg, #808000, #ffff00) !important;
+    color: black !important;
+}
+.Notification.warning .title-bar-text {
+    color: black !important;
+}
+
+.notification-message {
+    margin: 0;
+    padding: 4px;
+}

@@ -12,7 +12,18 @@ import {
     passwordMessage,
     getCSRFToken
 } from "./auth_modal.js?v=1";
-import Notification from './Components/Notification/Notification.js';
+import Notification from './Components/Notification/Notification.js?v=2';
+
+// Read server-provided user meta (never from editable inputs)
+function getUserMeta() {
+    try {
+        const el = document.getElementById('user-meta');
+        return el ? JSON.parse(el.textContent) : {};
+    } catch {
+        return {};
+    }
+}
+
 // #region Elements
 const profileButton = document.getElementById("profile-button");
 const profileModal = document.getElementById("profile-modal");
@@ -42,7 +53,7 @@ const newEmailRequiredWarning = document.getElementById("new-email-required-warn
 const emailPasswordRequiredWarning = document.getElementById("email-password-required-warning");
 const emailCancelButton = document.getElementById("email-cancel-button");
 const emailSaveButton = document.getElementById("email-save-button");
-
+const emailPendingBadge = document.getElementById("email-pending-badge");
 // Password modal elements
 const passwordModal = document.getElementById("password-modal");
 const editPasswordButton = document.getElementById("edit-password-button");
@@ -58,6 +69,14 @@ const confirmPasswordRequiredWarning = document.getElementById("confirm-password
 const passwordCancelButton = document.getElementById("password-cancel-button");
 const passwordSaveButton = document.getElementById("password-save-button");
 
+// Delete Account Elements
+const deleteAccountModal = document.getElementById("delete-account-modal");
+const deleteAccountButton = document.getElementById("delete-account-button");
+const deleteCancelButton = document.getElementById("delete-cancel-button");
+const deleteConfirmButton = document.getElementById("delete-confirm-button");
+const deletePasswordInput = document.getElementById("delete-password-input");
+const deleteAccountHelp = document.getElementById("delete-account-help");
+
 // Editor page elements
 const displayNameInput = document.getElementById('display-name-input');
 const displayNameCounter = document.getElementById('editor-display-name-counter');
@@ -65,7 +84,8 @@ const bioInput = document.getElementById('bio-input');
 const bioTextCounter = document.getElementById('bio-text-counter');
 // #endregion
 
-
+let originalUsername = '';
+let originalEmail = '';
 
 // #region Validation States
 let shouldShowUsernameErrors = false;
@@ -77,15 +97,50 @@ let shouldShowPasswordErrors = false;
 function openModal(modal) {
     if (modal) {
         modal.style.display = "flex";
+        // Timeout to allow display change to register before adding class
+        setTimeout(() => {
+            modal.classList.add("is-opening");
+        }, 10);
+
+        if (modal === usernameModal) {
+            originalUsername = getUserMeta().username || '';
+            updateUsernameValidation();
+        } else if (modal === emailModal) {
+            originalEmail = getUserMeta().email || '';
+            updateEmailValidation();
+        } else if (modal === passwordModal) {
+            updatePasswordValidation();
+        }
     }
 }
 
 function closeModal(modal) {
     if (modal) {
-        modal.style.display = "none";
-        clearValidation(modal);
+        modal.classList.remove("is-opening");
+
+        let transitionEnded = false;
+
+        function onTransitionEnd(event) {
+            // Make sure we are listening for the right transition
+            if (event.propertyName !== 'opacity' || transitionEnded) return;
+
+            transitionEnded = true;
+            modal.removeEventListener('transitionend', onTransitionEnd);
+            modal.style.display = "none";
+            clearValidation(modal);
+        }
+
+        modal.addEventListener('transitionend', onTransitionEnd);
+
+        // Fallback in case transitionend doesn't fire
+        setTimeout(() => {
+            if (!transitionEnded) {
+                onTransitionEnd({ propertyName: 'opacity' }); // Simulate the event
+            }
+        }, 300); // Should be slightly longer than the transition duration (0.2s)
     }
 }
+
 
 function clearValidation(modal) {
     if (modal === usernameModal) {
@@ -93,13 +148,11 @@ function clearValidation(modal) {
         setFieldHelp(usernameHelp, "", false);
         setRequiredWarning(newUsernameRequiredWarning, false);
         setRequiredWarning(usernamePasswordRequiredWarning, false);
-        
-        // Reset values to original
+
         if (newUsernameInput) {
-            newUsernameInput.value = newUsernameInput.defaultValue;
-            // Update counter after reset
+            newUsernameInput.value = "";
             if (usernameCounter) {
-                usernameCounter.textContent = `${newUsernameInput.value.length}/32`;
+                usernameCounter.textContent = `0/32`;
             }
         }
         if (usernamePasswordInput) {
@@ -110,10 +163,9 @@ function clearValidation(modal) {
         setFieldHelp(emailHelp, "", false);
         setRequiredWarning(newEmailRequiredWarning, false);
         setRequiredWarning(emailPasswordRequiredWarning, false);
-        
-        // Reset values to original
+
         if (newEmailInput) {
-            newEmailInput.value = newEmailInput.defaultValue;
+            newEmailInput.value = "";
         }
         if (emailPasswordInput) {
             emailPasswordInput.value = "";
@@ -126,36 +178,48 @@ function clearValidation(modal) {
         setRequiredWarning(currentPasswordRequiredWarning, false);
         setRequiredWarning(newPasswordRequiredWarning, false);
         setRequiredWarning(confirmPasswordRequiredWarning, false);
-        
-        // Clear all password fields
+
         if (currentPasswordInput) currentPasswordInput.value = "";
         if (newPasswordInput) newPasswordInput.value = "";
         if (confirmPasswordInput) confirmPasswordInput.value = "";
+    } else if (modal === deleteAccountModal) {
+        if (deletePasswordInput) deletePasswordInput.value = "";
+        if (deleteAccountHelp) setFieldHelp(deleteAccountHelp, "", false);
     }
 }
+function setButtonLoading(button, isLoading) {
+    if (!button) return;
 
+    const originalContent = button.dataset.originalHTML;
+
+    if (isLoading) {
+        if (!originalContent) {
+            button.dataset.originalHTML = button.innerHTML;
+        }
+        button.disabled = true;
+        button.innerHTML = '<img src="/static/accounts/images/loading-spinner.gif" alt="Loading..." style="height: 14px; vertical-align: middle;">';
+    } else {
+        if (originalContent) {
+            button.innerHTML = originalContent;
+            delete button.dataset.originalHTML;
+        }
+        button.disabled = false;
+    }
+}
 // Close modals on escape key
 document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
         closeModal(usernameModal);
         closeModal(emailModal);
         closeModal(passwordModal);
+        closeModal(deleteAccountModal);
         if (profileModal && profileModal.classList.contains("is-open")) {
             closeProfileModal();
         }
     }
 });
 
-// Close modals on outside click
-[usernameModal, emailModal, passwordModal].forEach(modal => {
-    if (modal) {
-        modal.addEventListener("click", (event) => {
-            if (event.target === modal) {
-                closeModal(modal);
-            }
-        });
-    }
-});
+
 // #endregion
 
 
@@ -177,10 +241,10 @@ if (newUsernameInput) {
         updateUsernameValidation();
     });
     newUsernameInput.addEventListener("blur", updateUsernameValidation);
-    
+
     // Initial counter value
     if (usernameCounter) {
-        usernameCounter.textContent = `${newUsernameInput.value.length}/32`;
+        usernameCounter.textContent = `0/32`;
     }
 }
 
@@ -193,15 +257,17 @@ function updateUsernameValidation() {
     if (!newUsernameInput || !usernamePasswordInput) return;
 
     const username = newUsernameInput.value.trim();
+    const isUnchanged = username === originalUsername;
+    usernameSaveButton.disabled = isUnchanged;
+
     const password = usernamePasswordInput.value;
     const isUsernameEmpty = username.length === 0;
-    const isPasswordEmpty = password.length === 0;
     const isTooShort = username.length > 0 && username.length < 3;
     const hasInvalidChars = !usernamePattern.test(username);
 
     // Warnings
     setRequiredWarning(newUsernameRequiredWarning, isUsernameEmpty && shouldShowUsernameErrors);
-    setRequiredWarning(usernamePasswordRequiredWarning, isPasswordEmpty && shouldShowUsernameErrors);
+    setRequiredWarning(usernamePasswordRequiredWarning, password.length === 0 && shouldShowUsernameErrors);
 
     // Help Text
     if (isUsernameEmpty && shouldShowUsernameErrors) {
@@ -228,12 +294,12 @@ if (usernameSaveButton) {
         if (isUsernameEmpty || isPasswordEmpty || isTooShort || hasInvalidChars) {
             shouldShowUsernameErrors = true;
             updateUsernameValidation();
-            
+
             if (isUsernameEmpty) {
                 shakeRequiredWarning(newUsernameRequiredWarning);
                 shakeFieldHelp(usernameHelp);
                 newUsernameInput.focus();
-            } else if (isTooShort || hasInvalidCharacters) {
+            } else if (isTooShort || hasInvalidChars) {
                 shakeFieldHelp(usernameHelp);
                 newUsernameInput.focus();
             } else if (isPasswordEmpty) {
@@ -243,38 +309,39 @@ if (usernameSaveButton) {
             return;
         }
 
-        // get csrf token helper
         const csrfToken = getCSRFToken();
-        // Prepare the data
         const payload = {
             username: newUsernameInput.value.trim(),
             password: usernamePasswordInput.value
         };
-        try{
-            // Sending to the new URL
-            const response = await fetch('/api/profile/change_username/',{
+
+        setButtonLoading(usernameSaveButton, true);
+
+        try {
+            const response = await fetch('/api/profile/change_username/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken':  csrfToken
+                    'X-CSRFToken': csrfToken
                 },
                 body: JSON.stringify(payload)
             });
             const data = await response.json();
 
-            if(data.ok){
-                // Handle Success
+            if (data.ok) {
                 closeModal(usernameModal);
                 document.getElementById('username-input').value = payload.username;
                 Notification.success('Username Changed')
             } else {
                 Notification.error(`${data.message}`)
             }
-        } catch (error){
+        } catch (error) {
             Notification.error(`Connection Error : ${error}`)
+        } finally {
+            setButtonLoading(usernameSaveButton, false);
         }
-        
-        
+
+
     });
 }
 // #endregion
@@ -302,14 +369,16 @@ function updateEmailValidation() {
     if (!newEmailInput || !emailPasswordInput) return;
 
     const email = newEmailInput.value.trim();
+    const isUnchanged = email === originalEmail;
+    emailSaveButton.disabled = isUnchanged;
+
     const password = emailPasswordInput.value;
     const isEmailEmpty = email.length === 0;
-    const isPasswordEmpty = password.length === 0;
     const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     const isInvalidEmail = email.length > 0 && !emailPattern.test(email);
 
     setRequiredWarning(newEmailRequiredWarning, isEmailEmpty && shouldShowEmailErrors);
-    setRequiredWarning(emailPasswordRequiredWarning, isPasswordEmpty && shouldShowEmailErrors);
+    setRequiredWarning(emailPasswordRequiredWarning, password.length === 0 && shouldShowEmailErrors);
 
     if (isEmailEmpty && shouldShowEmailErrors) {
         setFieldHelp(emailHelp, emailRequiredMessage, true, "error");
@@ -321,13 +390,13 @@ function updateEmailValidation() {
 }
 
 if (emailSaveButton) {
-    emailSaveButton.addEventListener("click", () => {
+    emailSaveButton.addEventListener("click", async () => {
         const email = newEmailInput.value.trim();
         const password = emailPasswordInput.value;
-        const isEmailEmpty = email.length === 0;
-        const isPasswordEmpty = password.length === 0;
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         const isInvalidEmail = email.length > 0 && !emailPattern.test(email);
+        const isEmailEmpty = email.length === 0;
+        const isPasswordEmpty = password.length === 0;
 
         if (isEmailEmpty || isPasswordEmpty || isInvalidEmail) {
             shouldShowEmailErrors = true;
@@ -343,8 +412,37 @@ if (emailSaveButton) {
             }
             return;
         }
-
-        closeModal(emailModal);
+        setButtonLoading(emailSaveButton, true);
+        try {
+            const response = await fetch('/api/profile/change_email/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken()
+                },
+                body: JSON.stringify({ email: email, password: password })
+            });
+            const data = await response.json();
+            if (data.ok) {
+                closeModal(emailModal);
+                if (data.message === 'This email is already verified.') {
+                    Notification.success('This email is already verified.');
+                } else {
+                    const mainEmailInput = document.getElementById('email-input');
+                    if (mainEmailInput) mainEmailInput.value = email;
+                    if (emailPendingBadge) {
+                        emailPendingBadge.style.display = 'inline-block';
+                    }
+                    Notification.info("Check your email for verification", { duration: 0 });
+                }
+            } else {
+                Notification.warning(data.message || "Failed to update email", { duration: 0 })
+            }
+        } catch (error) {
+            Notification.error(`Connection Error: ${error}`, { duration: 0 })
+        } finally {
+            setButtonLoading(emailSaveButton, false);
+        }
     });
 }
 // #endregion
@@ -368,39 +466,42 @@ if (passwordCancelButton) {
 function updatePasswordValidation() {
     if (!currentPasswordInput || !newPasswordInput || !confirmPasswordInput) return;
 
-    const currentPw = currentPasswordInput.value;
     const newPw = newPasswordInput.value;
     const confirmPw = confirmPasswordInput.value;
 
-    const isCurrentEmpty = currentPw.length === 0;
     const isNewEmpty = newPw.length === 0;
     const isConfirmEmpty = confirmPw.length === 0;
+
+    passwordSaveButton.disabled = isNewEmpty && isConfirmEmpty;
+
+    const currentPw = currentPasswordInput.value;
+    const isCurrentEmpty = currentPw.length === 0;
     const isNewTooShort = newPw.length > 0 && newPw.length < 8;
     const isMismatch = confirmPw.length > 0 && newPw !== confirmPw;
+    const isSameAsCurrent = newPw.length > 0 && newPw === currentPw;
 
     setRequiredWarning(currentPasswordRequiredWarning, isCurrentEmpty && shouldShowPasswordErrors);
     setRequiredWarning(newPasswordRequiredWarning, isNewEmpty && shouldShowPasswordErrors);
     setRequiredWarning(confirmPasswordRequiredWarning, isConfirmEmpty && shouldShowPasswordErrors);
 
-    // Current Password Help
     if (isCurrentEmpty && shouldShowPasswordErrors) {
         setFieldHelp(currentPasswordHelp, "Current password is required", true, "error");
     } else {
         setFieldHelp(currentPasswordHelp, "", false);
     }
 
-    // New Password Help
     if (isNewEmpty && shouldShowPasswordErrors) {
         setFieldHelp(newPasswordHelp, "New password is required", true, "error");
     } else if (isNewTooShort) {
         setFieldHelp(newPasswordHelp, passwordMessage, true, "error");
+    } else if (isSameAsCurrent) {
+        setFieldHelp(newPasswordHelp, "New password cannot be the same as the current one.", true, "error");
     } else if (document.activeElement === newPasswordInput) {
         setFieldHelp(newPasswordHelp, passwordMessage, true, "info");
     } else {
         setFieldHelp(newPasswordHelp, "", false);
     }
 
-    // Confirm Password Help
     if (isConfirmEmpty && shouldShowPasswordErrors) {
         setFieldHelp(confirmPasswordHelp, "Please confirm your new password", true, "error");
     } else if (isMismatch) {
@@ -411,34 +512,123 @@ function updatePasswordValidation() {
 }
 
 if (passwordSaveButton) {
-    passwordSaveButton.addEventListener("click", () => {
-        const isCurrentEmpty = currentPasswordInput.value.length === 0;
-        const isNewEmpty = newPasswordInput.value.length === 0;
-        const isConfirmEmpty = confirmPasswordInput.value.length === 0;
-        const isNewTooShort = newPasswordInput.value.length < 8;
-        const isMismatch = newPasswordInput.value !== confirmPasswordInput.value;
+    // Replace the existing click listener with this one
+    passwordSaveButton.addEventListener("click", async () => {
+        // 1. Get the values from all three password fields
+        const currentPw = currentPasswordInput.value;
+        const newPw = newPasswordInput.value;
+        const confirmPw = confirmPasswordInput.value;
 
-        if (isCurrentEmpty || isNewEmpty || isConfirmEmpty || isNewTooShort || isMismatch) {
+        // 2. Perform client-side validation first
+        const isCurrentEmpty = currentPw.length === 0;
+        const isNewEmpty = newPw.length === 0;
+        const isConfirmEmpty = confirmPw.length === 0;
+        const isNewTooShort = newPw.length > 0 && newPw.length < 8;
+        const isMismatch = newPw !== confirmPw;
+        const isSameAsCurrent = newPw.length > 0 && newPw === currentPw;
+
+        // 3. If any validation fails, show errors and stop
+        if (isCurrentEmpty || isNewEmpty || isConfirmEmpty || isNewTooShort || isMismatch || isSameAsCurrent) {
             shouldShowPasswordErrors = true;
-            updatePasswordValidation();
+            updatePasswordValidation(); // This function will display the appropriate error messages
 
+            // Focus the first field with an error to guide the user
             if (isCurrentEmpty) {
-                shakeRequiredWarning(currentPasswordRequiredWarning);
-                shakeFieldHelp(currentPasswordHelp);
                 currentPasswordInput.focus();
-            } else if (isNewEmpty || isNewTooShort) {
-                shakeRequiredWarning(newPasswordRequiredWarning);
-                shakeFieldHelp(newPasswordHelp);
+            } else if (isNewEmpty || isNewTooShort || isSameAsCurrent) {
                 newPasswordInput.focus();
             } else if (isConfirmEmpty || isMismatch) {
-                shakeRequiredWarning(confirmPasswordRequiredWarning);
-                shakeFieldHelp(confirmPasswordHelp);
                 confirmPasswordInput.focus();
             }
+            return; // Stop the function here
+        }
+
+        // 4. If client-side validation passes, prepare data for the server
+        const payload = {
+            current_password: currentPw,
+            new_password: newPw,
+            confirm_password: confirmPw,
+        };
+
+        // 5. Show loading spinner and disable the button
+        setButtonLoading(passwordSaveButton, true);
+
+        try {
+            // 6. Send the data to the backend API endpoint
+            const response = await fetch('/api/profile/change_password/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+
+            // 7. Handle the server's response
+            if (data.ok) {
+                // On success, close the modal and show a success notification
+                closeModal(passwordModal);
+                Notification.success(data.message || 'Password changed successfully!');
+            } else {
+                // On failure, display the error message from the server
+                Notification.error(data.message || 'Failed to change password.');
+            }
+        } catch (error) {
+            // Handle network errors
+            Notification.error('A connection error occurred.');
+        } finally {
+            // 8. Re-enable the button and remove the spinner
+            setButtonLoading(passwordSaveButton, false);
+        }
+    });
+}
+// #endregion
+
+// #region Delete Account
+if (deleteAccountButton) {
+    deleteAccountButton.addEventListener("click", () => openModal(deleteAccountModal));
+}
+if (deleteCancelButton) {
+    deleteCancelButton.addEventListener("click", () => closeModal(deleteAccountModal));
+}
+if (deleteConfirmButton) {
+    deleteConfirmButton.addEventListener("click", async () => {
+        const password = deletePasswordInput.value;
+        if (!password) {
+            setFieldHelp(deleteAccountHelp, "Password is required.", true, "error");
+            shakeFieldHelp(deleteAccountHelp);
             return;
         }
 
-        closeModal(passwordModal);
+        setButtonLoading(deleteConfirmButton, true);
+
+        try {
+            const response = await fetch('/api/profile/delete_account/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCSRFToken(),
+                },
+                body: JSON.stringify({ password: password }),
+            });
+
+            const data = await response.json();
+
+            if (data.ok) {
+                closeModal(deleteAccountModal);
+                Notification.success("Account deleted successfully.");
+                window.location.href = "/";
+            } else {
+                setFieldHelp(deleteAccountHelp, data.message, true, "error");
+                shakeFieldHelp(deleteAccountHelp);
+            }
+        } catch (error) {
+            setFieldHelp(deleteAccountHelp, "An unexpected error occurred.", true, "error");
+        } finally {
+            setButtonLoading(deleteConfirmButton, false);
+        }
     });
 }
 // #endregion
@@ -449,7 +639,6 @@ if (displayNameInput && displayNameCounter) {
         displayNameCounter.textContent = `${displayNameInput.value.length}/32`;
     };
     displayNameInput.addEventListener("input", updateDisplayNameCounter);
-    // Initial count for pre-filled values
     updateDisplayNameCounter();
 }
 
@@ -458,14 +647,51 @@ if (bioInput && bioTextCounter) {
         bioTextCounter.textContent = `${bioInput.value.length}/200`;
     };
     bioInput.addEventListener("input", updateBioCounter);
-    // Initial count for pre-filled values
     updateBioCounter();
 }
+// #endregion
+
+// #region Profile Save Bar
+const profileSaveBar = document.getElementById("profile-save-bar");
+
+// Inputs whose changes should trigger the save bar.
+// Add more fields here later (e.g. pronounsInput) and they'll be tracked automatically.
+const trackedEditorInputs = [displayNameInput, bioInput].filter(Boolean);
+
+// Snapshot of each input's value at the moment the modal was opened / last saved
+let originalEditorValues = new Map();
+
+function snapshotEditorValues() {
+    originalEditorValues = new Map(
+        trackedEditorInputs.map((input) => [input, input.value])
+    );
+}
+
+function hasUnsavedEditorChanges() {
+    return trackedEditorInputs.some(
+        (input) => input.value !== originalEditorValues.get(input)
+    );
+}
+
+function updateSaveBarVisibility() {
+    if (!profileSaveBar) return;
+    profileSaveBar.classList.toggle("is-visible", hasUnsavedEditorChanges());
+}
+
+trackedEditorInputs.forEach((input) => {
+    input.addEventListener("input", updateSaveBarVisibility);
+});
+
+// Take the initial snapshot now, and refresh it whenever the profile modal opens
+// so a previous session's edits don't immediately show the bar again.
+snapshotEditorValues();
 // #endregion
 
 // #region Profile Modal Open/Close
 function openProfileModal() {
     if (profileModal) profileModal.classList.add("is-open");
+    snapshotEditorValues();
+    updateSaveBarVisibility();
 }
 
 function closeProfileModal() {
@@ -483,6 +709,37 @@ if (profileButton && profileCloseButton) {
             }
         });
     }
+}
+// #endregion
+
+// #region Enter Key Submission
+function handleEnterKey(event, button) {
+    if (event.key === 'Enter') {
+        event.preventDefault();
+        button.click();
+    }
+}
+
+[newUsernameInput, usernamePasswordInput].forEach(input => {
+    if (input) {
+        input.addEventListener('keydown', (event) => handleEnterKey(event, usernameSaveButton));
+    }
+});
+
+[newEmailInput, emailPasswordInput].forEach(input => {
+    if (input) {
+        input.addEventListener('keydown', (event) => handleEnterKey(event, emailSaveButton));
+    }
+});
+
+[currentPasswordInput, newPasswordInput, confirmPasswordInput].forEach(input => {
+    if (input) {
+        input.addEventListener('keydown', (event) => handleEnterKey(event, passwordSaveButton));
+    }
+});
+
+if (deletePasswordInput) {
+    deletePasswordInput.addEventListener('keydown', (event) => handleEnterKey(event, deleteConfirmButton));
 }
 // #endregion
 

@@ -1,7 +1,7 @@
 #profile-modal {
     position: fixed;
     inset: 0;
-    
+
     display: grid;
     place-items: center;
 
@@ -9,8 +9,8 @@
 
     background: rgba(0, 0, 0, 0);
 
-    opacity: 0;
-    visibility: hidden;
+    opacity: 1;
+    visibility: visible;
 
     transition:
         opacity 0.2s ease,
@@ -47,17 +47,19 @@
 
     display: flex;
     flex-direction: column;
-    padding:4px;
+    padding: 4px;
     gap: 2px;
-    
+
 }
-.sidebar-item img{
+
+.sidebar-item img {
     width: 12px;
     height: 12px;
 
     margin-right: 1px;
 
-    image-rendering: pixelated; /* optional for retro icons */
+    image-rendering: pixelated;
+    /* optional for retro icons */
     transition: filter 0.2s ease;
 }
 
@@ -93,9 +95,10 @@
     border-color: threedface;
 }
 
-.sidebar-item:hover img{
+.sidebar-item:hover img {
     filter: brightness(0) invert(1);
 }
+
 .sidebar-item.active img {
     filter: brightness(0) invert(1);
 }
@@ -146,9 +149,11 @@
 
     pointer-events: auto;
 }
+
 .setting-group {
     margin-bottom: 10px;
 }
+
 /* Space B/W Label and input/button */
 .setting-group label {
     display: block;
@@ -173,6 +178,7 @@
     width: 100%;
     resize: none;
 }
+
 .bio-container {
     position: relative;
 }
@@ -226,11 +232,13 @@
 
     cursor: pointer;
 }
+
 .icon-button img {
     width: 14px;
     height: 14px;
     filter: drop-shadow(1px 1px 0 black);
 }
+
 .icon-button:active img {
     transform: translate(1px, 1px);
 }
@@ -245,13 +253,123 @@
     inset: 0;
 
     z-index: 99999;
-    background: rgba(0,0,0,0.4);
+    background: rgba(0, 0, 0, 0.4);
 
     justify-content: center;
     align-items: center;
+
+    /* Animation styles */
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out;
+}
+
+.modal-overlay.is-opening {
+    opacity: 1;
+    visibility: visible;
 }
 
 .modal-overlay .window {
     width: 200px;
+    transform: scale(0.95);
+    transition: transform 0.2s ease-in-out;
 }
 
+.modal-overlay.is-opening .window {
+    transform: scale(1);
+}
+
+.profile-editor-window {
+    position: relative;
+}
+
+.profile-save-bar {
+
+    position: absolute;
+
+    left: 8px;
+    right: 8px;
+
+    bottom: 8px;
+
+    height: 50px;
+
+    background: #000080;
+
+    color: white;
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: space-between;
+
+    padding: 0 10px;
+
+    z-index: 99999;
+
+    /* Hidden by default, sitting below its resting position */
+    opacity: 0;
+    transform: translateY(20px);
+    pointer-events: none;
+
+    transition:
+        opacity 0.2s ease,
+        transform 0.2s ease;
+}
+
+/* Added so the bar slides up into view rather than just appearing */
+.profile-save-bar.is-visible {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}
+
+/* Keeps Reset and Save Changes side by side with a small fixed gap,
+   regardless of how narrow the bar gets */
+.profile-save-bar-buttons {
+    display: flex;
+    align-items: center;
+    flex-shrink: 0;
+    gap: 6px;
+}
+
+
+
+.save-bar-reset-button {
+    background: #cc0000 !important;
+    color: white !important;
+    box-shadow:
+        inset -1px -1px #0a0a0a,
+        inset 1px 1px #690000,
+        inset -2px -2px grey,
+        inset 2px 2px #ff8e8e;
+}
+
+.save-bar-save-button {
+    background: #008000 !important;
+    color: white !important;
+    box-shadow:
+        inset -1px -1px #0a0a0a,
+        inset 1px 1px #003f00,
+        inset -2px -2px grey,
+        inset 2px 2px #8eff8e;
+}
+
+.save-bar-reset-button:not(:disabled):active {
+    box-shadow:
+        inset -1px -1px #ff8e8e,
+        inset 1px 1px #0a0a0a,
+        inset -2px -2px #e57373,
+        inset 2px 2px #690000;
+    text-shadow: 1px 1px #220000;
+}
+
+.save-bar-save-button:not(:disabled):active {
+    box-shadow:
+        inset -1px -1px #8eff8e,
+        inset 1px 1px #0a0a0a,
+        inset -2px -2px #73e573,
+        inset 2px 2px #003f00;
+    text-shadow: 1px 1px #002200;
+}
