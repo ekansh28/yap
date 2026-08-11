@@ -497,3 +497,50 @@
         </div>
     </div>
 </div>
+
+
+<div id="cropper-modal" class="modal-overlay">
+    <div class="window" style="width: 420px;">
+        
+        <!-- The Title Bar -->
+        <div class="title-bar" id="cropper-title-bar">
+            <div class="title-bar-text" id="cropper-title">Select an Image</div>
+            <div class="title-bar-controls">
+                <button id="cropper-close-button" aria-label="Close"></button>
+            </div>
+        </div>
+
+        <div class="window-body">
+            <!-- STATE 1: Select Image -->
+            <div id="cropper-select-state" style="text-align: center; padding: 20px;">
+                <button id="cropper-upload-button">Upload Image</button>
+                <!-- Hidden file input -->
+                <input type="file" id="cropper-file-input" accept="image/png, image/jpeg, image/gif" style="display: none;">
+            </div>
+
+            <!-- STATE 2: Edit Image (Hidden initially) -->
+            <div id="cropper-edit-state" style="display: none;">
+                <!-- The workspace where dragging happens -->
+                <div class="cropper-workspace" id="cropper-workspace">
+                    <!-- The image that moves -->
+                    <img id="cropper-image" src="" alt="To Crop" draggable="false">
+                    <!-- The square cutout overlay -->
+                    <div class="cropper-overlay"></div>
+                </div>
+                
+                <div class="field-row" style="width: 300px; margin: 15px auto; justify-content: center;">
+                    <label for="cropper-zoom-slider" style="margin-right: 10px;">Zoom:</label>
+                    <label for="cropper-zoom-slider">-</label>
+                    <input id="cropper-zoom-slider" type="range" min="1" max="3" step="0.05" value="1" />
+                    <label for="cropper-zoom-slider">+</label>
+                </div>
+                
+                <div class="modal-buttons" style="margin-top: 10px;">
+                    <button id="cropper-cancel-button">Cancel</button>
+                    <button id="cropper-save-button" class="save-bar-save-button">Done</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

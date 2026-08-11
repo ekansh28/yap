@@ -386,3 +386,44 @@
         inset 2px 2px #003f00;
     text-shadow: 1px 1px #002200;
 }
+
+
+/* The box that holds everything */
+.cropper-workspace {
+    width: 400px; /* Increased from 300px */
+    height: 300px;
+    background: #000;
+    position: relative;
+    overflow: hidden;
+    margin: 0 auto;
+    cursor: grab;
+}
+
+.cropper-workspace:active {
+    cursor: grabbing;
+}
+
+/* The actual image being dragged */
+#cropper-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    transform-origin: top left;
+    /* We will use JS to change its transform: translate(x, y) */
+}
+
+/* The greyed-out area with a clear square in the middle */
+
+.cropper-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
+    border: 2px dashed white;
+    
+    width: 200px;
+    height: 200px;
+    margin: 50px 100px;
+    
+    pointer-events: none; 
+}

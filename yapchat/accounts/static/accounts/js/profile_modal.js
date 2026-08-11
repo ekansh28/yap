@@ -13,6 +13,7 @@ import {
     getCSRFToken
 } from "./auth_modal.js?v=1";
 import Notification from './Components/Notification/Notification.js?v=2';
+import './profile_media.js';
 
 // Read server-provided user meta (never from editable inputs)
 function getUserMeta() {
