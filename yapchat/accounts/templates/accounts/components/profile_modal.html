@@ -193,7 +193,7 @@
                                     disabled
                                 >
 
-                                 <span id="email-pending-badge" class="pending-badge" {% if request.user.email_verified %}style="display: none;"{% endif %}>
+                                 <span id="email-pending-badge" title="Email Verification Pending" class="pending-badge" {% if request.user.email_verified %}style="display: none;"{% endif %}>
                                     <img src="{% static '/accounts/images/notif-warning.png' %}" alt="Email Verification Pending" style="width: 12px; height: 12px; image-rendering: pixelated; vertical-align: middle;">
                                 </span>
                                 <button id="edit-email-button" class="icon-button">
@@ -204,6 +204,12 @@
                                 </button>
 
                             </div>
+
+                            {% if not request.user.email_verified %}
+                                <button id="verify-email-button" class="verify-button">
+                                    Verify Email
+                                </button>
+                            {% endif %}
 
                         </div>
 

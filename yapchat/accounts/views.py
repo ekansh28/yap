@@ -271,6 +271,38 @@ def verify_email_token(request):
                         },status=200)
 
 @login_required
+@require_POST
+def resend_verification(request):
+    """
+    RESENDS EMAIL VERIFICATION LINK TO USERS EMAIL
+    """
+    try:
+        if request.user.email_verified:
+            return JsonResponse({'ok': False,'message': 'Email is already verified.'}, status=400)
+        with transaction.atomic():
+            # Generate a new verification token
+            _, raw_token = create_email_verification_token(request.user)
+
+            # Build the absolute URL for the verification page
+            verification_url = request.build_absolute_uri(reverse("verify_email_page"))
+            verification_url = f"{verification_url}#token={raw_token}"
+
+            # Queue email using Celery
+            def queue_verification_email():
+                send_verification_email_task.delay(
+                    to_email=request.user.email,
+                    username=request.user.profile.effective_display_name,
+                    verification_url=verification_url,
+                    idempotency_key=f"verify-email-resend/{request.user.pk}/{timezone.now().timestamp()}"
+                )
+            transaction.on_commit(queue_verification_email)
+            
+        return JsonResponse({'ok': True, 'message': 'Verification email sent! Please check your inbox.'})
+    except Exception as e:
+        print(f'Error in resend_verification: {e}')
+        return JsonResponse({'ok': False, 'message': 'Internal Server Error'}, status=500)
+
+@login_required
 @require_POST # only allow POST requests 
 def update_profile(request):
     try:

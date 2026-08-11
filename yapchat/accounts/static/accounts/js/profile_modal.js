@@ -82,6 +82,10 @@ const displayNameInput = document.getElementById('display-name-input');
 const displayNameCounter = document.getElementById('editor-display-name-counter');
 const bioInput = document.getElementById('bio-input');
 const bioTextCounter = document.getElementById('bio-text-counter');
+
+
+
+
 // #endregion
 
 let originalUsername = '';
@@ -447,6 +451,39 @@ if (emailSaveButton) {
 }
 // #endregion
 
+
+// #region Email Verify button
+const emailVerifyButton = document.getElementById("verify-email-button");
+if (emailVerifyButton){
+    emailVerifyButton.addEventListener("click", async () =>{
+        // Start loading spinner on button
+        setButtonLoading(emailVerifyButton, true);
+
+        try {
+            // Make POST Request to backend to send email
+            const response = await fetch('/api/profile/resend_verification/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type' : 'application/json',
+                    'X-CSRFToken' : getCSRFToken() // Required for DJANGO POST Requests!
+                },
+            });
+            const data = await response.json();
+
+            // handling response
+            if (data.ok) {
+                Notification.success("Verification email sent! Check your inbox/spam folder.");
+            } else {
+                Notification.error(data.message || "Failed to send your email.");
+            }
+        } catch (error) {
+            Notification.error("Connection Error: Could not send email.");
+        } finally {
+            setButtonLoading(emailVerifyButton. false);
+        }
+    });
+}
+
 // #region Password Validation
 if (editPasswordButton) {
     editPasswordButton.addEventListener("click", () => openModal(passwordModal));
@@ -653,6 +690,8 @@ if (bioInput && bioTextCounter) {
 
 // #region Profile Save Bar
 const profileSaveBar = document.getElementById("profile-save-bar");
+const profileResetButton = document.getElementById('profile-reset-button');
+const profileSaveButton = document.getElementById('profile-save-button');
 
 // Inputs whose changes should trigger the save bar.
 // Add more fields here later (e.g. pronounsInput) and they'll be tracked automatically.
@@ -682,6 +721,63 @@ trackedEditorInputs.forEach((input) => {
     input.addEventListener("input", updateSaveBarVisibility);
 });
 
+// Reset Button Logic
+if(profileResetButton){
+    profileResetButton.addEventListener("click", () => {
+        // Restore all tracked inputs to their original values
+        trackedEditorInputs.forEach((input) => {
+            input.value = originalEditorValues.get(input);
+            // Manually trigger the 'input' event so characters counters update
+            input.dispatchEvent(new Event("input"));
+        });
+
+        // Hide Save Bar
+        updateSaveBarVisibility();
+    });
+}
+
+// Save Button Logic
+if(profileSaveButton){
+    profileSaveButton.addEventListener("click", async () => {
+        // Prepare data payload
+        const payload = {
+            display_name: displayNameInput ? displayNameInput.value.trim() : null,
+            bio: bioInput ? bioInput.value.trim() : null
+        };
+
+        // Start loading state
+        setButtonLoading(profileSaveButton, true);
+
+        try {
+            // Make network request to your endpoint
+            const response = await fetch('/api/profile/update/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken' : getCSRFToken()
+                },
+                body: JSON.stringify(payload)
+            });
+
+            const data = await response.json();
+
+            // Handle server response
+            if(data.ok){
+                //update snapshot so system knows the new values are original
+                snapshotEditorValues();
+                updateSaveBarVisibility();
+                Notification.success(data.message || "Profile updated sucessfully!");
+            } else {
+                Notification.error(data.message || "Failed to update profile.");
+            }
+        } catch(error) {
+            Notification.error(`Connection Error: ${error}`);
+        } finally {
+            // End loading state
+            setButtonLoading(profileSaveButton, false);
+        }
+    });
+}
 // Take the initial snapshot now, and refresh it whenever the profile modal opens
 // so a previous session's edits don't immediately show the bar again.
 snapshotEditorValues();

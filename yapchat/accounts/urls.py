@@ -15,4 +15,5 @@ urlpatterns = [
     path('api/profile/change_email/', views.change_email, name='change_email'),
     path('api/profile/change_password/', views.change_password, name='change_password'),
     path('api/profile/delete_account/', views.delete_account, name='delete_account'),
+        path('api/profile/resend_verification/', views.resend_verification, name='resend_verification'),
 ]

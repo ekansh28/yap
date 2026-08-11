@@ -204,9 +204,22 @@
     pointer-events: none;
 }
 
+.verify-button {
+    background: #da8e01 !important;
+    color: white;
+
+    font-weight: bold;
+
+    padding: 6px 12px;
+
+    margin-top: 12px;
+
+    cursor: pointer;
+}
 
 .delete-button {
     background: #cc0000;
+
     color: white;
 
     font-weight: bold;
