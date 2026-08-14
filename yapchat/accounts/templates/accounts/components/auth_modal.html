@@ -1,6 +1,7 @@
 {% load static %}
 
   <div id="auth-modal">
+      {% csrf_token %}
       <div class="window auth-window">
   <div class="title-bar">
     <div class="title-bar-text">Registration / Sign In</div>
@@ -105,37 +106,44 @@
 
     <!-- Login Form -->
     <div id="login-state" class="auth-state is-active">
-        <p>Email or Username<span class="required-marker" aria-hidden="true">*</span></p>
-        <div class="auth-input-wrapper no-counter">
-            <input
-                id="login-email-input"
-                type="text"
-                autocomplete="off"
-                autocorrect="off"
-                autocapitalize="off"
-                spellcheck="false"
-            >
-        </div>
-        <p>Password<span class="required-marker" aria-hidden="true">*</span></p>
-        <div class="auth-input-wrapper no-counter">
-            <input
-                id="login-password-input"
-                type="password"
-                autocomplete="off"
-                autocorrect="off"
-                autocapitalize="off"
-                spellcheck="false"
-            >
-        </div>
-        <p id="login-error-help" class="email-help" aria-live="polite"></p>
-        <a href="#" class="forgot-password">Forgot your password?</a>
-        <div class="auth-actions">
-            <button id="login-button">Log In</button>
-        </div>
+        <form id="login-form" action="/api/login/" method="POST">
+            {% csrf_token %}
+            <p>Email or Username<span class="required-marker" aria-hidden="true">*</span></p>
+            <div class="auth-input-wrapper no-counter">
+                <input
+                    id="login-email-input"
+                    name="username"
+                    type="text"
+                    autocomplete="username"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                >
+            </div>
+            <p>Password<span class="required-marker" aria-hidden="true">*</span></p>
+            <div class="auth-input-wrapper no-counter">
+                <input
+                    id="login-password-input"
+                    name="password"
+                    type="password"
+                    autocomplete="current-password"
+                    autocorrect="off"
+                    autocapitalize="off"
+                    spellcheck="false"
+                >
+            </div>
+            <p id="login-error-help" class="email-help" aria-live="polite"></p>
+            <a href="#" class="forgot-password">Forgot your password?</a>
+            <div class="auth-actions">
+                <button id="login-button" type="submit">Log In</button>
+            </div>
+        </form>
         <p class="auth-switcher">Need an account? <a href="#" id="show-register">Register</a></p>
     </div>
 
     {% include "accounts/components/verify_email.html" %}
+    {% include "accounts/components/verify_device.html" %}                      
+
 </div>
 </div>
   </div>

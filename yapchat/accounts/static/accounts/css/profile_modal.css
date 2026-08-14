@@ -217,6 +217,14 @@
     cursor: pointer;
 }
 
+.logout-button {
+    background: #000080;
+    color: white;
+    font-weight: bold;
+    padding: 6px 12px;
+    cursor: pointer;
+}
+
 .delete-button {
     background: #cc0000;
 

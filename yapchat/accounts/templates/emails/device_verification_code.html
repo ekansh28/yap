@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Device Verification Code</title>
+    <style>
+        @font-face {
+            font-family: "Pixelated MS Sans Serif";
+            src: url("{% static 'email/fonts/ms-sans-serif-1.otf' %}") format("opentype");
+        }
+
+        body {
+            background-color: transparent;
+            padding: 20px 0;
+            margin: 0;
+            font-family: "Pixelated MS Sans Serif", Tahoma, Arial, sans-serif;
+        }
+
+        .window {
+            background: #c0c0c0;
+            border: 2px solid;
+            border-color: #ffffff #808080 #808080 #ffffff;
+            padding: 3px;
+            width: 420px;
+            margin: auto;
+            font-size: 12px;
+            box-shadow: 2px 2px 8px rgba(0,0,0,0.3);
+        }
+
+        .title-bar {
+            background: #000080;
+            color: white;
+            padding: 4px 8px;
+            font-weight: bold;
+        }
+
+        .window-body {
+            padding: 16px;
+            color: #000000;
+        }
+
+        /* Centered Wrapper for Code Digits (No Outer Box) */
+        .code-container {
+            padding: 12px 0;
+            margin: 16px 0;
+            text-align: center;
+        }
+
+        .code-digit {
+            display: inline-block;
+            width: 44px;
+            height: 52px;
+            line-height: 48px;
+            background: #ffffff;
+            border: 2px solid;
+            border-color: #808080 #ffffff #ffffff #808080;
+            font-family: "Pixelated MS Sans Serif", Tahoma, Arial, sans-serif;
+            font-size: 26px;
+            font-weight: bold;
+            color: #000080;
+            margin: 0 4px;
+            text-align: center;
+            vertical-align: middle;
+            box-sizing: border-box;
+        }
+
+        .status-box {
+            background: #ffffe1; /* Win98 tooltip yellow */
+            border: 1px solid #000000;
+            padding: 8px;
+            margin-top: 12px;
+            font-size: 11px;
+            line-height: 16px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="window">
+        <div class="title-bar">
+            Security Alert - Unverified Device
+        </div>
+        
+        <div class="window-body">
+            <p>Hi {{ username }},</p>
+
+            <p>
+                We detected a sign-in attempt to your YapChat account from an unrecognized device or location.
+            </p>
+            
+            <p style="margin-bottom: 4px; font-weight: bold;">Your 5-digit verification code is:</p>
+
+            <div class="code-container">
+                {% for digit in code_digits %}
+                    <span class="code-digit">{{ digit }}</span>
+                {% endfor %}
+            </div>
+
+            <div class="status-box">
+                <img src="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAABGdBTUEAALGPC/xhBQAAACBjSFJNAAB6JgAAgIQAAPoAAACA6AAAdTAAAOpgAAA6mAAAF3CculE8AAAAElBMVEUAAACAgAD//wAAAACAgID///9DTNBXAAAAAXRSTlMAQObYZgAAAAFiS0dEBfhv6ccAAAAHdElNRQfiBhoAKi/jBqMDAAAAUUlEQVQI1z2MwQ2AMAwDnQ2gbOAsgNoMEEH3n4kkRb3XST4ZAM4DhVC3eEkj7yVKW8vousUrGb2ixqtlJKQyn0KCiOLlffLpF0tJDDKKCczCP9tqDg+12hjAAAAAJXRFWHRkYXRlOmNyZWF0ZQAyMDE4LTA2LTI2VDAwOjQyOjQ3LTA0OjAwdbFsfgAAACV0RVh0ZGF0ZTptb2RpZnkAMjAxOC0wNi0yNlQwMDo0Mjo0Ny0wNDowMATs1MIAAAAASUVORK5CYII=" width="16" height="16" alt="Warning" style="vertical-align: middle; margin-right: 6px;" />
+                <strong>Security Note:</strong> This code will expire in <strong>10 minutes</strong>. If you did not initiate this request, please secure your account immediately.
+            </div>
+        </div>
+    </div>
+</body>
+</html>

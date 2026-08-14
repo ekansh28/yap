@@ -89,7 +89,7 @@ function updateImageTransform() {
     cropperImage.style.transform = `translate(${currentX}px, ${currentY}px) scale(${currentScale})`;
 }
 
-workspace.addEventListener('mousedown', (e) => {
+workspace?.addEventListener('mousedown', (e) => {
     // 1. Tell the browser NOT to use its default image dragging behavior
     e.preventDefault(); 
     

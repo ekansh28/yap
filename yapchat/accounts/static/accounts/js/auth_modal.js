@@ -1,3 +1,4 @@
+import "./verify_device.js";      
 const authButton = document.getElementById("auth-button");
 const authModal = document.getElementById("auth-modal");
 const closeButton = document.getElementById("close-button");
@@ -53,12 +54,15 @@ let shouldShowDobError = false;
 
 //#region Auth State Switching
 function showState(state) {
+    document.querySelectorAll('.auth-state').forEach(el => el.classList.remove('is-active'));
+
     if (state === 'login') {
-        loginState.classList.add('is-active');
-        registrationState.classList.remove('is-active');
-    } else {
-        registrationState.classList.add('is-active');
-        loginState.classList.remove('is-active');
+        if (loginState) loginState.classList.add('is-active');
+    } else if (state === 'register') {
+        if (registrationState) registrationState.classList.add('is-active');
+    } else if (state === 'verify_device') {
+        const verifyDeviceState = document.getElementById('verify-device-state');
+        if (verifyDeviceState) verifyDeviceState.classList.add('is-active');
     }
 }
 
@@ -633,8 +637,11 @@ if (submitButton && usernameInput) {
     });
 }
 
-if (loginButton) {
-    loginButton.addEventListener("click", async (event) => {
+const loginForm = document.getElementById("login-form");
+const loginTarget = loginForm || loginButton;
+
+if (loginTarget) {
+    loginTarget.addEventListener("submit", async (event) => {
         event.preventDefault();
 
         const email = loginEmailInput.value.trim();
@@ -646,7 +653,7 @@ if (loginButton) {
         }
 
         const payload = {
-            login: email, // Assuming backend accepts 'login' field for email or username
+            login: email,
             password: password,
         };
 
@@ -673,8 +680,28 @@ if (loginButton) {
                 return;
             }
 
-            // On success, close modal and reload the page to reflect logged-in state
+            // Check if backend requires 5-digit verification code
+            if (data.requires_device_verification) {
+                const controller = window.VerifyDevice || window.verifyDevice;
+                if (controller) {
+                    controller.show(data.session_token, data.masked_email);
+                } else {
+                    console.error("VerifyDevice controller not found.");
+                }
+                return;
+            }
+
+            // Standard login success: close modal and show centered 98.css Logging In popup
             closeAuthModal();
+
+            const loadingOverlay = document.getElementById("auth-loading-overlay");
+            const loadingTitle = document.getElementById("auth-loading-title");
+            const loadingText = document.getElementById("auth-loading-text");
+
+            if (loadingTitle) loadingTitle.textContent = "Logging In";
+            if (loadingText) loadingText.textContent = "Logging in, please wait...";
+            if (loadingOverlay) loadingOverlay.style.display = "flex";
+
             window.location.reload();
 
         } catch (error) {

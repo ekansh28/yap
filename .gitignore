@@ -1,1 +1,8 @@
+.env
 yapchat/.env
+yapchat/,env
+.venv/
+__pycache__/
+*.pyc
+*.sqlite3
+.DS_Store

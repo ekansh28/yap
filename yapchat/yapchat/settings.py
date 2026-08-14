@@ -183,7 +183,7 @@ CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": ["rediss://default:AU_PAAIncDI3YjA3MzNkMDZmMTU0ZjhhODAwNzE2NjE4NDE0NGI5OXAyMjA0MzE@warm-fly-20431.upstash.io:6379"],
+            "hosts": [os.getenv("REDIS_URL", "rediss://default:AU_PAAIncDI3YjA3MzNkMDZmMTU0ZjhhODAwNzE2NjE4NDE0NGI5OXAyMjA0MzE@warm-fly-20431.upstash.io:6379")],
         },
     },
 }

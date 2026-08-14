@@ -4,10 +4,10 @@ from .models import Room, Message
 import uuid
 from django.db import transaction, models
 import json
-from django.views.decorators.csrf import csrf_exempt
-import asyncio
+from django.views.decorators.csrf import ensure_csrf_cookie, csrf_exempt
 
 # Create your views here.
+@ensure_csrf_cookie
 def index(request):
     return render(request, "chat/main.html")
 

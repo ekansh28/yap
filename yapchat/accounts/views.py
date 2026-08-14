@@ -32,9 +32,15 @@ from accounts.services.email_verification import (
 )  
 
 
+from accounts.models import UserDevice, DeviceVerificationCode                  
+from accounts.services.device_verification import (                             
+    is_device_verified,                                                         
+    create_device_verification_challenge                                        
+)                                                                               
+
 
 # send_verification_email_task is the Celery task that will be called to send the verification email asynchronously. It is imported here so that it can be used in the register_user view to send the email without blocking the request-response cycle.
-from accounts.tasks import send_verification_email_task
+from accounts.tasks import send_verification_email_task,  send_device_verification_code_task   
 
 User = get_user_model()
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_.]+$")
@@ -206,6 +212,13 @@ def register_user(request):
 @require_http_methods(["POST"])
 @csrf_protect
 def login_view(request):
+    """                                                                         
+    Authenticates user credentials. If the credentials are valid but            
+    the device is unrecognized/unverified, it creates a 5-digit verification    
+challenge                                                                         
+    and returns requires_device_verification: True to open the verification     
+modal.                                                                            
+    """  
     try:
         payload = json.loads(request.body.decode("utf-8"))
     except json.JSONDecodeError:
@@ -217,10 +230,9 @@ def login_view(request):
     if not username_or_email or not password:
         return JsonResponse({"ok": False, "message": "Email/Username and password are required."}, status=400)
 
-    # Try to find user by username first, then by email
-    user = User.objects.filter(username__iexact=username_or_email).first()
-    if not user:
-        user = User.objects.filter(email__iexact=username_or_email).first()
+    # Try to find user by username or by email
+    user = User.objects.filter(username__iexact=username_or_email).first() or \
+    User.objects.filter(email__iexact=username_or_email).first()
 
     if user:
         # Always authenticate via username — Django's default backend requires it
@@ -229,11 +241,96 @@ def login_view(request):
         authenticated_user = None
 
     if authenticated_user is not None:
+        # Check if this device is trusted for this user
+        if not is_device_verified(authenticated_user, request):
+          # Create 5-digit challenge code in DB
+          session_token, raw_code = create_device_verification_challenge(authenticated_user,request)
+
+          # Queue Celery background email task
+          send_device_verification_code_task.delay(
+              to_email=authenticated_user.email,
+              username=authenticated_user.profile.effective_display_name,
+              code=raw_code
+          )
+
+          # Mask email address for user privacy (e.g. e****h@gmail.com)
+          email_parts = authenticated_user.email.split("@")
+          username_part = email_parts[0]
+          if len(username_part) > 2:
+              masked_user = f"{username_part[0]}***{username_part[-1]}"
+          else: 
+              masked_user = "***"
+          masked_email = f"{masked_user}@{email_parts[1]}"
+
+          # Tell frontend to show 5 digit verification modal
+          return JsonResponse({
+              "ok": True,
+              "requires_device_verification": True,
+              "session_token": session_token,
+              "masked_email": masked_email
+          })
+
+        # Device is already verified -> proceeds to standard login
         login(request, authenticated_user)
         return JsonResponse({"ok": True, "message": "Login successful."})
     else:
         return JsonResponse({"ok": False, "message": "Invalid credentials."}, status=400)
 
+@require_POST
+@csrf_protect
+def verify_device_code(request):
+    """                                                                         
+    Validates the 5-digit security code entered by the user in the frontend     
+modal.                                                                            
+    If valid, registers the device as trusted in UserDevice and logs the user in.
+    """  
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"ok": False, "message":"Invalid Request."}, status=400)
+
+    session_token = payload.get("session_token", "").strip()
+    code = payload.get("code", "").strip()
+
+    # Validate code format (must be exactly 5 digits)
+    if not session_token or not code or len(code) != 5 or not code.isdigit():
+        return JsonResponse({"ok": False, "message" : "Please enter a valid 5-digit code."}, status=400)
+
+    # Look up active verification challenged by session_token
+    challenge = DeviceVerificationCode.objects.filter(session_token=session_token).first()
+
+    if not challenge or not challenge.is_valid():
+        return JsonResponse({"ok": False, "message" : "Verification code expired or invalid. Please try logging in aagain."}, status =400)
+    # increment attempt count for security tracing
+    challenge.attempts += 1
+
+    # verify SHA-256 code hash
+    if not challenge.check_code(code):
+        challenge.save()
+        remaining_attempts = 5 - challenge.attempts
+        return JsonResponse({"ok":False, "message": f"incorrect code. {remaining_attempts} attempt(s) remaining."}, status= 400)
+
+    # Code is correct, mark challenge as used
+    challenge.used_at = timezone.now()
+    challenge.save()
+
+    # Register this device in UserDevice table as trusted
+    UserDevice.objects.get_or_create(
+        user=challenge.user,
+        device_hash = challenge.device_hash,
+        defaults= {
+            "device_name" : challenge.device_name,
+            "ip_address" : challenge.ip_address
+        }
+    )
+
+    # Complete login session
+    login(request,challenge.user)
+
+    return JsonResponse({
+        "ok": True,
+        "message": "Device successfully verified! Logging in..."
+    })
 
 @require_http_methods(["POST"])
 @csrf_protect
@@ -497,3 +594,64 @@ def delete_account(request):
     except Exception as e:
         print(f"Error deleting account: {e}")
         return JsonResponse({'ok': False, 'message': 'Internal Server Error'}, status=500)
+
+
+@login_required
+@require_POST
+def logout_view(request):
+    """
+    Logs out the current user and clears their session.
+    """
+    logout(request)
+    return JsonResponse({"ok": True, "message": "Logged out successfully."})
+
+
+@require_POST
+@csrf_protect
+def resend_device_code(request):
+    """
+    Resends a new 5-digit verification code email for an active device verification challenge.
+    Enforces a 60-second cooldown.
+    """
+    try:
+        payload = json.loads(request.body.decode("utf-8"))
+    except json.JSONDecodeError:
+        return JsonResponse({"ok": False, "message": "Invalid request format."}, status=400)
+
+    session_token = payload.get("session_token", "").strip()
+    if not session_token:
+        return JsonResponse({"ok": False, "message": "Invalid session token."}, status=400)
+
+    challenge = DeviceVerificationCode.objects.filter(session_token=session_token).first()
+    if not challenge or challenge.used_at:
+        return JsonResponse({"ok": False, "message": "Session expired or invalid. Please log in again."}, status=400)
+
+    now = timezone.now()
+    time_since_creation = (now - challenge.created_at).total_seconds()
+    if time_since_creation < 60:
+        remaining = int(60 - time_since_creation)
+        return JsonResponse({
+            "ok": False,
+            "message": f"Please wait {remaining}s before requesting a new code.",
+            "cooldown_remaining": remaining
+        }, status=400)
+
+    # Generate new challenge for the user
+    new_challenge = create_device_verification_challenge(
+        user=challenge.user,
+        request=request
+    )
+
+    # Send Celery task
+    from .tasks import send_device_verification_code_task
+    send_device_verification_code_task.delay(
+        to_email=challenge.user.email,
+        username=challenge.user.username,
+        code=new_challenge["plain_code"]
+    )
+
+    return JsonResponse({
+        "ok": True,
+        "new_session_token": new_challenge["session_token"],
+        "message": "A new 5-digit verification code has been sent to your email."
+    })

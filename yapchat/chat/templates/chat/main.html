@@ -70,6 +70,21 @@
             </div>
 
         </div>
+    <!-- Win98 Native Auth Loading Overlay -->
+    <div id="auth-loading-overlay" style="display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: transparent; z-index: 999999; align-items: center; justify-content: center;">
+        <div class="window" style="width: 280px">
+            <div class="title-bar">
+                <div id="auth-loading-title" class="title-bar-text">Logging In</div>
+            </div>
+            <div class="window-body">
+                <p align="center" style="margin-top: 12px;">
+                    <img src="{% static 'image/loading.gif' %}" width="32" height="32" alt="Loading...">
+                </p>
+                <p id="auth-loading-text" align="center" style="margin-bottom: 12px;">
+                    Logging in, please wait...
+                </p>
+            </div>
+        </div>
     </div>
 
     <script type="module" src="{% static 'js/LandingPage/main.js' %}"></script>

@@ -855,3 +855,40 @@ sidebarItems.forEach((item) => {
     });
 });
 // #endregion
+
+// #region Log Out Event Listener
+const logoutAccountButton = document.getElementById("logout-account-button");
+logoutAccountButton?.addEventListener("click", async () => {
+    // 1. Close profile modal immediately
+    closeProfileModal();
+
+    // 2. Show native Win98 auth loading popup with Logging Out text
+    const loadingOverlay = document.getElementById("auth-loading-overlay") || document.getElementById("logout-loading-overlay");
+    const loadingTitle = document.getElementById("auth-loading-title");
+    const loadingText = document.getElementById("auth-loading-text");
+
+    if (loadingTitle) loadingTitle.textContent = "Logging Out";
+    if (loadingText) loadingText.textContent = "Logging out, please wait...";
+    if (loadingOverlay) loadingOverlay.style.display = "flex";
+
+    try {
+        const response = await fetch("/api/logout/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": getCSRFToken(),
+            },
+        });
+        const data = await response.json();
+        if (data.ok) {
+            window.location.reload();
+        } else {
+            if (loadingOverlay) loadingOverlay.style.display = "none";
+            console.error("Logout failed:", data.message);
+        }
+    } catch (err) {
+        if (loadingOverlay) loadingOverlay.style.display = "none";
+        console.error("Logout request error:", err);
+    }
+});
+// #endregion

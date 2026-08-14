@@ -8,6 +8,7 @@ from django.db import models
 # Import settings to access AUTH_USER_MODEL 
 # Important because if we change the user model in the future, we want to avoid hardcoding 'accounts.User' in our models and instead use settings.AUTH_USER_MODEL which will always point to the correct user model
 from django.conf import settings
+import hashlib # for device verification
 
 # Create your models here.
 class User(AbstractUser):
@@ -172,3 +173,45 @@ class EmailVerificationToken(models.Model):
         # Once used, the token must never be accepted again.
         return self.used_at is not None
     
+class UserDevice(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete = models.CASCADE,
+        related_name = "devices"
+    )
+    device_hash = models.CharField(max_length=64, db_index=True)
+    device_name = models.CharField(max_length=255, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True)
+    verified_at = models.DateTimeField(auto_now_add=True)
+    last_used_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        unique_together = ("user", "device_hash")
+
+    def __str__(self):
+        return f"{self.user.username}'s Device ({self.device_name})"
+
+class DeviceVerificationCode(models.Model):
+    user = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="device_verification_codes"
+    )
+    session_token = models.CharField(max_length=64, unique=True, db_index=True)
+    code_hash = models.CharField(max_length=64)
+    device_hash = models.CharField(max_length=64)
+    device_name = models.CharField(max_length=255, blank=True)
+    ip_address = models.GenericIPAddressField(null=True, blank=True) 
+
+    expires_at = models.DateTimeField()
+    attempts = models.PositiveIntegerField(default=0)
+    used_at = models.DateTimeField(null=True, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def is_valid(self):
+        from django.utils import timezone
+        return self.used_at is None and timezone.now() < self.expires_at and self.attempts < 5   
+
+    def check_code(self, raw_code):
+        hashed_input = hashlib.sha256(raw_code.encode("utf-8")).hexdigest()
+        return self.code_hash == hashed_input

@@ -1,0 +1,71 @@
+{% load static %}
+
+<!-- Unverified Device Verification Auth State -->
+<div id="verify-device-state" class="auth-state">
+    <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+        <img src="{% static 'accounts/images/notif-warning.png' %}" width="20" height="20" alt="Warning" />
+        <h4 style="margin: 0; font-size: 14px; font-weight: bold; color: #000080;">Unverified Device Detected</h4>
+    </div>
+
+    <p id="verify-device-help" style="display: block !important; opacity: 1 !important; visibility: visible !important; max-height: none !important; font-size: 12px; line-height: 18px; margin: 8px 0 12px 0; color: #111111;" aria-live="polite">
+        A security verification email with a <strong>5-digit code</strong> has been sent to: <strong id="verify-device-email" style="color: #000080;">email@example.com</strong>.<br>
+        Please enter the code below to trust this device and log in.
+    </p>
+
+    <!-- 5 Retro Win98 Digit Input Boxes -->
+    <div class="code-boxes-wrapper" style="display: flex; gap: 8px; justify-content: center; margin: 16px 0;">
+        <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="device-code-box" data-index="0" autocomplete="off" />
+        <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="device-code-box" data-index="1" autocomplete="off" />
+        <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="device-code-box" data-index="2" autocomplete="off" />
+        <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="device-code-box" data-index="3" autocomplete="off" />
+        <input type="text" maxlength="1" inputmode="numeric" pattern="[0-9]*" class="device-code-box" data-index="4" autocomplete="off" />
+    </div>
+
+    <!-- Error message display container -->
+    <p id="verify-device-error" class="email-help" style="color: red; font-size: 11px; min-height: 16px; text-align: center; margin: 4px 0 8px 0;" aria-live="polite"></p>
+
+    <!-- Spam Folder Helper Tooltip & Resend with Countdown Timer -->
+    <div style="background: #ffffe1; border: 1px solid #7f7f7f; padding: 8px 10px; font-size: 11px; margin-bottom: 14px; display: flex; align-items: center; justify-content: space-between; gap: 8px;">
+        <div style="display: flex; align-items: center; gap: 6px;">
+            <img src="{% static 'accounts/images/info.png' %}" width="14" height="14" alt="Info" />
+            <span>Didn't get code? Check <strong>Spam / Junk</strong> folder.</span>
+        </div>
+        <button id="resend-device-code-button" type="button" style="font-size: 11px; padding: 2px 8px; cursor: pointer; white-space: nowrap;" disabled>
+            Resend in <span id="resend-countdown-timer">60</span>s
+        </button>
+    </div>
+
+    <!-- Modal Action Buttons -->
+    <div class="verify-email-actions" style="display: flex; justify-content: space-between; align-items: center;">
+        <button id="back-to-login-from-device" type="button">Back</button>
+        <button id="submit-device-code-button" type="button" disabled>Verify Code</button>
+    </div>
+</div>
+
+<style>
+/* Win98 Style Digit Boxes - Proportional Square Box Layout */
+.device-code-box {
+    width: 48px !important;
+    min-width: 48px !important;
+    max-width: 48px !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    font-size: 26px !important;
+    font-weight: bold !important;
+    font-family: "Pixelated MS Sans Serif", Tahoma, Arial, sans-serif !important;
+    color: #000080 !important;
+    text-align: center !important;
+    line-height: 48px !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: #ffffff !important;
+    border: 2px inset #dfdfdf !important;
+    box-shadow: inset -1px -1px #ffffff, inset 1px 1px #0a0a0a !important;
+    box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+}
+.device-code-box:focus {
+    outline: 2px solid #000080 !important;
+    background: #ffffcc !important; /* Soft yellow highlight on focus */
+}
+</style>
