@@ -39,8 +39,11 @@ from accounts.services.device_verification import (
 )                                                                               
 
 
-# send_verification_email_task is the Celery task that will be called to send the verification email asynchronously. It is imported here so that it can be used in the register_user view to send the email without blocking the request-response cycle.
-from accounts.tasks import send_verification_email_task,  send_device_verification_code_task   
+from accounts.services.r2_storage import (
+    upload_to_r2_or_local,
+    delete_from_r2_or_local
+)
+from accounts.tasks import send_verification_email_task, send_device_verification_code_task   
 
 User = get_user_model()
 USERNAME_PATTERN = re.compile(r"^[A-Za-z0-9_.]+$")
@@ -403,39 +406,91 @@ def resend_verification(request):
 @require_POST # only allow POST requests 
 def update_profile(request):
     try:
-        #1. Parse the JSON data sent from JS
-        data=json.loads(request.body)
+        # 1. Parse the JSON data sent from JS
+        data = json.loads(request.body)
         
-        #2. Get specific fields we want to update
-        #.get() is safe because it returns None if the key is missing
+        # 2. Get fields we want to update
         new_display_name = data.get('display_name')
+        new_pronouns = data.get('pronouns')
         new_bio = data.get('bio')
+        avatar_data = data.get('avatar_data')
+        banner_data = data.get('banner_data')
+        remove_avatar = data.get('remove_avatar', False)
+        remove_banner = data.get('remove_banner', False)
 
-        #3. Get the user's profile object
+        # 3. Get the user's profile object
         profile = request.user.profile
 
-        #4. Basic Validation (Backend must always revalidates)
+        # 4. Basic Validation
         if new_display_name is not None:
             if len(new_display_name) > 32:
-                return JsonResponse({'ok': False, 'message' : 'Display name too long'}, status=400)
-            profile.display_name=new_display_name
+                return JsonResponse({'ok': False, 'message': 'Display name too long'}, status=400)
+            profile.display_name = new_display_name
+
+        if new_pronouns is not None:
+            if len(new_pronouns) > 32:
+                return JsonResponse({'ok': False, 'message': 'Pronouns too long'}, status=400)
+            profile.pronouns = new_pronouns
         
         if new_bio is not None:
             if len(new_bio) > 200:
-                return JsonResponse({'ok' : False, 'message' : 'Bio too long'}, status=400)
+                return JsonResponse({'ok': False, 'message': 'Bio too long'}, status=400)
             profile.bio = new_bio
 
-        #5. Save Changes to the database
+        # 5. Handle Avatar changes
+        if remove_avatar:
+            if profile.avatar_key:
+                delete_from_r2_or_local(profile.avatar_key)
+                profile.avatar_key = ""
+        elif avatar_data:
+            key = upload_to_r2_or_local(request.user.id, avatar_data, folder="avatars")
+            if profile.avatar_key and profile.avatar_key != key:
+                delete_from_r2_or_local(profile.avatar_key)
+            profile.avatar_key = key
+
+        # 6. Handle Banner changes
+        if remove_banner:
+            if profile.banner_key:
+                delete_from_r2_or_local(profile.banner_key)
+                profile.banner_key = ""
+        elif banner_data:
+            key = upload_to_r2_or_local(request.user.id, banner_data, folder="banners")
+            if profile.banner_key and profile.banner_key != key:
+                delete_from_r2_or_local(profile.banner_key)
+            profile.banner_key = key
+
+        # 7. Handle Avatar Shape, Status Badge, and Banner Color options
+        new_avatar_shape = data.get('avatar_shape')
+        if new_avatar_shape in ('square', 'round'):
+            profile.avatar_shape = new_avatar_shape
+
+        show_status_badge = data.get('show_status_badge')
+        if show_status_badge is not None:
+            profile.show_status_badge = bool(show_status_badge)
+
+        new_banner_color = data.get('banner_color')
+        if new_banner_color:
+            if new_banner_color.startswith('#') and len(new_banner_color) in (4, 7):
+                profile.banner_color = new_banner_color
+
+        # 8. Save Changes to the database
         profile.save()
 
         return JsonResponse({
             'ok': True,
-            'message': 'Profile updated sucessfully',
-            'display_name' : profile.display_name,
-            'bio' : profile.bio
+            'message': 'Profile updated successfully',
+            'display_name': profile.display_name,
+            'effective_display_name': profile.effective_display_name,
+            'pronouns': profile.pronouns,
+            'bio': profile.bio,
+            'banner_color': profile.banner_color,
+            'avatar_url_64': profile.avatar_url_64,
+            'banner_url_sm': profile.banner_url_sm,
+            'avatar_shape': profile.avatar_shape,
+            'show_status_badge': profile.show_status_badge,
         })
     except json.JSONDecodeError:
-         return JsonResponse({'ok': False, 'message': 'Invalid JSON data'}, status=400)
+        return JsonResponse({'ok': False, 'message': 'Invalid JSON data'}, status=400)
     except Exception as e:
         print(f"Error updating profile: {e}")
         return JsonResponse({'ok': False, 'message': 'Internal Server Error'}, status=500)

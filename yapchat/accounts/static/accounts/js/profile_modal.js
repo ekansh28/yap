@@ -1,19 +1,53 @@
-import {
-    setFieldHelp,
-    setRequiredWarning,
-    shakeFieldHelp,
-    shakeRequiredWarning,
-    usernamePattern,
-    usernameRequiredMessage,
-    usernameRulesMessage,
-    usernameLengthMessage,
-    emailRequiredMessage,
-    passwordRequiredMessage,
-    passwordMessage,
-    getCSRFToken
-} from "./auth_modal.js?v=1";
 import Notification from './Components/Notification/Notification.js?v=2';
 import './profile_media.js';
+
+// Self-contained helpers
+export function setFieldHelp(helpElement, message, isVisible, state = "info") {
+    if (!helpElement) return;
+    helpElement.textContent = message;
+    helpElement.classList.toggle("is-visible", isVisible);
+    helpElement.classList.toggle("is-error", state === "error");
+    helpElement.classList.toggle("is-info", state === "info");
+}
+
+export function setRequiredWarning(warningElement, isVisible) {
+    if (!warningElement) return;
+    warningElement.classList.toggle("is-visible", isVisible);
+}
+
+export function shakeFieldHelp(helpElement) {
+    if (!helpElement) return;
+    helpElement.classList.remove("is-shaking");
+    void helpElement.offsetWidth;
+    helpElement.classList.add("is-shaking");
+}
+
+export function shakeRequiredWarning(warningElement) {
+    if (!warningElement) return;
+    warningElement.classList.remove("is-shaking");
+    void warningElement.offsetWidth;
+    warningElement.classList.add("is-shaking");
+}
+
+export function getCSRFToken() {
+    const cookieName = "csrftoken=";
+    const cookies = document.cookie ? document.cookie.split(";") : [];
+    for (const cookie of cookies) {
+        const trimmedCookie = cookie.trim();
+        if (trimmedCookie.startsWith(cookieName)) {
+            return decodeURIComponent(trimmedCookie.slice(cookieName.length));
+        }
+    }
+    return "";
+}
+
+export const usernamePattern = /^[A-Za-z0-9_.]*$/;
+export const usernameRequiredMessage = "Please enter your username";
+export const usernameRulesMessage = "Please use only numbers, letters, underscores _ or periods.";
+export const usernameLengthMessage = "Username must be 3-32 characters";
+export const emailRequiredMessage = "Please enter your email";
+export const passwordRequiredMessage = "Please enter your password";
+export const passwordMessage = "Password must be at least 8 characters";
 
 // Read server-provided user meta (never from editable inputs)
 function getUserMeta() {
@@ -78,11 +112,13 @@ const deleteConfirmButton = document.getElementById("delete-confirm-button");
 const deletePasswordInput = document.getElementById("delete-password-input");
 const deleteAccountHelp = document.getElementById("delete-account-help");
 
-// Editor page elements
-const displayNameInput = document.getElementById('display-name-input');
-const displayNameCounter = document.getElementById('editor-display-name-counter');
-const bioInput = document.getElementById('bio-input');
-const bioTextCounter = document.getElementById('bio-text-counter');
+// Editor page elements (scoped inside profileModal to avoid auth modal collisions)
+const displayNameInput = profileModal ? profileModal.querySelector('#display-name-input') : document.getElementById('display-name-input');
+const displayNameCounter = profileModal ? profileModal.querySelector('#editor-display-name-counter') : document.getElementById('editor-display-name-counter');
+const pronounsInput = profileModal ? profileModal.querySelector('#pronouns-input') : document.getElementById('pronouns-input');
+const pronounsCounter = profileModal ? profileModal.querySelector('#editor-pronouns-counter') : document.getElementById('editor-pronouns-counter');
+const bioInput = profileModal ? profileModal.querySelector('#bio-input') : document.getElementById('bio-input');
+const bioTextCounter = profileModal ? profileModal.querySelector('#bio-text-counter') : document.getElementById('bio-text-counter');
 
 
 
@@ -671,32 +707,214 @@ if (deleteConfirmButton) {
 }
 // #endregion
 
-// #region Editor Page Features
-if (displayNameInput && displayNameCounter) {
-    const updateDisplayNameCounter = () => {
+// #region Editor Input Live Preview Sync
+function updateDisplayNameLive() {
+    if (!displayNameInput) return;
+    if (displayNameCounter) {
         displayNameCounter.textContent = `${displayNameInput.value.length}/32`;
-    };
-    displayNameInput.addEventListener("input", updateDisplayNameCounter);
-    updateDisplayNameCounter();
+    }
+    const previewDisplayName = document.getElementById('profile-preview-display-name');
+    if (previewDisplayName) {
+        previewDisplayName.textContent = displayNameInput.value.trim() || getUserMeta().username || 'Anonymous';
+    }
 }
 
-if (bioInput && bioTextCounter) {
-    const updateBioCounter = () => {
+function updateBioLive() {
+    if (!bioInput) return;
+    if (bioTextCounter) {
         bioTextCounter.textContent = `${bioInput.value.length}/200`;
-    };
-    bioInput.addEventListener("input", updateBioCounter);
-    updateBioCounter();
+    }
+    const previewBio = document.getElementById('profile-preview-bio');
+    if (previewBio) {
+        previewBio.textContent = bioInput.value;
+    }
+}
+
+function updatePronounsLive() {
+    if (!pronounsInput) return;
+    if (pronounsCounter) {
+        pronounsCounter.textContent = `${pronounsInput.value.length}/32`;
+    }
+    const previewPronouns = document.getElementById('profile-preview-pronouns');
+    if (previewPronouns) {
+        const val = pronounsInput.value.trim();
+        previewPronouns.textContent = val;
+        previewPronouns.style.display = val ? 'inline-block' : 'none';
+    }
+}
+
+if (displayNameInput) {
+    displayNameInput.addEventListener("input", updateDisplayNameLive);
+    displayNameInput.addEventListener("keyup", updateDisplayNameLive);
+    displayNameInput.addEventListener("change", updateDisplayNameLive);
+    updateDisplayNameLive();
+}
+
+if (pronounsInput) {
+    pronounsInput.addEventListener("input", updatePronounsLive);
+    pronounsInput.addEventListener("keyup", updatePronounsLive);
+    pronounsInput.addEventListener("change", updatePronounsLive);
+    updatePronounsLive();
+}
+
+if (bioInput) {
+    bioInput.addEventListener("input", updateBioLive);
+    bioInput.addEventListener("keyup", updateBioLive);
+    bioInput.addEventListener("change", updateBioLive);
+    updateBioLive();
 }
 // #endregion
 
-// #region Profile Save Bar
+// #region Profile Save Bar & Media Staging
 const profileSaveBar = document.getElementById("profile-save-bar");
 const profileResetButton = document.getElementById('profile-reset-button');
 const profileSaveButton = document.getElementById('profile-save-button');
+const removeAvatarButton = document.getElementById('remove-avatar-button');
+const removeBannerButton = document.getElementById('remove-banner-button');
+
+// Staged Media state
+let stagedAvatarData = null;
+let stagedBannerData = null;
+let removeAvatar = false;
+let removeBanner = false;
+let originalAvatarUrl = '';
+let originalBannerUrl = '';
+
+function getOriginalBannerUrl() {
+    const previewBanner = document.getElementById('profile-preview-banner');
+    if (!previewBanner) return '';
+    const bg = previewBanner.style.backgroundImage;
+    if (bg && bg.startsWith('url(')) {
+        return bg.slice(4, -1).replace(/["']/g, '');
+    }
+    return '';
+}
+
+// Listen for cropped images from profile_media.js
+window.addEventListener('profile:imageCropped', (e) => {
+    const { mode, dataUrl, payloadData } = e.detail;
+
+    if (mode === 'avatar') {
+        stagedAvatarData = payloadData !== undefined ? payloadData : dataUrl;
+        removeAvatar = false;
+        const previewAvatar = document.getElementById('profile-preview-avatar');
+        if (previewAvatar) {
+            previewAvatar.src = dataUrl;
+        }
+    } else if (mode === 'banner') {
+        stagedBannerData = payloadData !== undefined ? payloadData : dataUrl;
+        removeBanner = false;
+        const previewBanner = document.getElementById('profile-preview-banner');
+        if (previewBanner) {
+            previewBanner.style.backgroundImage = `url('${dataUrl}')`;
+            previewBanner.style.backgroundSize = 'cover';
+            previewBanner.style.backgroundPosition = 'center';
+        }
+    }
+
+    updateSaveBarVisibility();
+});
+
+// Remove Avatar Button
+removeAvatarButton?.addEventListener('click', () => {
+    removeAvatar = true;
+    stagedAvatarData = null;
+    const previewAvatar = document.getElementById('profile-preview-avatar');
+    if (previewAvatar) {
+        previewAvatar.src = '/static/image/default-avatar.png';
+    }
+    updateSaveBarVisibility();
+});
+
+// Remove Banner Button
+removeBannerButton?.addEventListener('click', () => {
+    removeBanner = true;
+    stagedBannerData = null;
+    const previewBanner = document.getElementById('profile-preview-banner');
+    if (previewBanner) {
+        previewBanner.style.backgroundImage = '';
+    }
+    updateSaveBarVisibility();
+});
+
+// Shape & Status Badge Controls
+const shapeRadios = document.querySelectorAll('input[name="avatar_shape"]');
+const showStatusCheckbox = document.getElementById('show-status-checkbox');
+
+let originalAvatarShape = 'square';
+let originalShowStatusBadge = true;
+let stagedBannerColor = null;
+let originalBannerColor = '#000000';
+
+function rgbToHex(color) {
+    if (!color) return '#000000';
+    if (color.startsWith('#')) return color;
+    const match = color.match(/^rgb\((\d+),\s*(\d+),\s*(\d+)\)$/);
+    if (!match) return '#000000';
+    const r = parseInt(match[1]).toString(16).padStart(2, '0');
+    const g = parseInt(match[2]).toString(16).padStart(2, '0');
+    const b = parseInt(match[3]).toString(16).padStart(2, '0');
+    return `#${r}${g}${b}`;
+}
+
+window.addEventListener('profile:bannerColorChanged', (e) => {
+    const newColor = e.detail.color;
+    stagedBannerColor = newColor;
+    const previewBanner = document.getElementById('profile-preview-banner');
+    if (previewBanner) {
+        previewBanner.style.backgroundColor = newColor;
+    }
+    updateSaveBarVisibility();
+});
+
+function getSelectedAvatarShape() {
+    const checked = document.querySelector('input[name="avatar_shape"]:checked');
+    return checked ? checked.value : 'square';
+}
+
+function applyAvatarShape(shape) {
+    const wrapper = document.getElementById('profile-avatar-wrapper');
+    const avatar = document.getElementById('profile-preview-avatar');
+    if (wrapper) {
+        wrapper.classList.remove('square', 'round');
+        wrapper.classList.add(shape);
+    }
+    if (avatar) {
+        avatar.classList.remove('square', 'round');
+        avatar.classList.add(shape);
+        avatar.style.borderRadius = shape === 'round' ? '50%' : '0px';
+    }
+}
+
+function applyStatusBadgeVisibility(show) {
+    const badge = document.getElementById('profile-preview-status-badge');
+    if (badge) {
+        badge.style.display = show ? 'flex' : 'none';
+    }
+}
+
+// Live sync for Avatar Shape
+shapeRadios.forEach((radio) => {
+    const handler = () => {
+        applyAvatarShape(radio.value);
+        updateSaveBarVisibility();
+    };
+    radio.addEventListener('change', handler);
+    radio.addEventListener('click', handler);
+});
+
+// Live sync for Status Badge Visibility
+if (showStatusCheckbox) {
+    const statusHandler = () => {
+        applyStatusBadgeVisibility(showStatusCheckbox.checked);
+        updateSaveBarVisibility();
+    };
+    showStatusCheckbox.addEventListener('change', statusHandler);
+    showStatusCheckbox.addEventListener('click', statusHandler);
+}
 
 // Inputs whose changes should trigger the save bar.
-// Add more fields here later (e.g. pronounsInput) and they'll be tracked automatically.
-const trackedEditorInputs = [displayNameInput, bioInput].filter(Boolean);
+const trackedEditorInputs = [displayNameInput, pronounsInput, bioInput].filter(Boolean);
 
 // Snapshot of each input's value at the moment the modal was opened / last saved
 let originalEditorValues = new Map();
@@ -705,12 +923,31 @@ function snapshotEditorValues() {
     originalEditorValues = new Map(
         trackedEditorInputs.map((input) => [input, input.value])
     );
+    const previewAvatar = document.getElementById('profile-preview-avatar');
+    if (previewAvatar) {
+        originalAvatarUrl = previewAvatar.src;
+    }
+    originalBannerUrl = getOriginalBannerUrl();
+    const previewBanner = document.getElementById('profile-preview-banner');
+    if (previewBanner) {
+        originalBannerColor = rgbToHex(previewBanner.style.backgroundColor) || '#000000';
+    }
+    stagedBannerColor = null;
+    originalAvatarShape = getSelectedAvatarShape();
+    originalShowStatusBadge = showStatusCheckbox ? showStatusCheckbox.checked : true;
+    applyAvatarShape(originalAvatarShape);
+    applyStatusBadgeVisibility(originalShowStatusBadge);
 }
 
 function hasUnsavedEditorChanges() {
-    return trackedEditorInputs.some(
+    const inputChanged = trackedEditorInputs.some(
         (input) => input.value !== originalEditorValues.get(input)
     );
+    const mediaChanged = (stagedAvatarData !== null) || (stagedBannerData !== null) || removeAvatar || removeBanner;
+    const shapeChanged = getSelectedAvatarShape() !== originalAvatarShape;
+    const statusChanged = showStatusCheckbox ? (showStatusCheckbox.checked !== originalShowStatusBadge) : false;
+    const bannerColorChanged = stagedBannerColor !== null && stagedBannerColor !== originalBannerColor;
+    return inputChanged || mediaChanged || shapeChanged || statusChanged || bannerColorChanged;
 }
 
 function updateSaveBarVisibility() {
@@ -723,14 +960,63 @@ trackedEditorInputs.forEach((input) => {
 });
 
 // Reset Button Logic
-if(profileResetButton){
+if (profileResetButton) {
     profileResetButton.addEventListener("click", () => {
-        // Restore all tracked inputs to their original values
+        // Restore text inputs to original values
         trackedEditorInputs.forEach((input) => {
-            input.value = originalEditorValues.get(input);
-            // Manually trigger the 'input' event so characters counters update
+            input.value = originalEditorValues.get(input) || '';
             input.dispatchEvent(new Event("input"));
         });
+
+        // Reset media staged states
+        stagedAvatarData = null;
+        stagedBannerData = null;
+        removeAvatar = false;
+        removeBanner = false;
+        stagedBannerColor = null;
+
+        const previewAvatar = document.getElementById('profile-preview-avatar');
+        if (previewAvatar) {
+            previewAvatar.src = originalAvatarUrl || '/static/image/default-avatar.png';
+        }
+
+        const previewBanner = document.getElementById('profile-preview-banner');
+        if (previewBanner) {
+            previewBanner.style.backgroundColor = originalBannerColor;
+            if (originalBannerUrl) {
+                previewBanner.style.backgroundImage = `url('${originalBannerUrl}')`;
+                previewBanner.style.backgroundSize = 'cover';
+                previewBanner.style.backgroundPosition = 'center';
+            } else {
+                previewBanner.style.backgroundImage = '';
+            }
+        }
+
+        const cropperColorBtn = document.getElementById('cropper-color-button');
+        const cropperColorHex = document.getElementById('cropper-color-hex');
+        if (cropperColorBtn) {
+            if (originalBannerUrl) {
+                cropperColorBtn.classList.add('no-color');
+                cropperColorBtn.style.backgroundColor = '';
+                if (cropperColorHex) cropperColorHex.textContent = 'None';
+            } else {
+                cropperColorBtn.classList.remove('no-color');
+                cropperColorBtn.style.backgroundColor = originalBannerColor;
+                if (cropperColorHex) cropperColorHex.textContent = (originalBannerColor || '#000000').toUpperCase();
+            }
+        }
+
+        // Reset Avatar Shape
+        shapeRadios.forEach((radio) => {
+            radio.checked = radio.value === originalAvatarShape;
+        });
+        applyAvatarShape(originalAvatarShape);
+
+        // Reset Status Badge
+        if (showStatusCheckbox) {
+            showStatusCheckbox.checked = originalShowStatusBadge;
+        }
+        applyStatusBadgeVisibility(originalShowStatusBadge);
 
         // Hide Save Bar
         updateSaveBarVisibility();
@@ -738,49 +1024,98 @@ if(profileResetButton){
 }
 
 // Save Button Logic
-if(profileSaveButton){
+if (profileSaveButton) {
     profileSaveButton.addEventListener("click", async () => {
         // Prepare data payload
         const payload = {
             display_name: displayNameInput ? displayNameInput.value.trim() : null,
-            bio: bioInput ? bioInput.value.trim() : null
+            pronouns: pronounsInput ? pronounsInput.value.trim() : null,
+            bio: bioInput ? bioInput.value.trim() : null,
+            avatar_data: stagedAvatarData,
+            banner_data: stagedBannerData,
+            banner_color: stagedBannerColor !== null ? stagedBannerColor : originalBannerColor,
+            remove_avatar: removeAvatar,
+            remove_banner: removeBanner,
+            avatar_shape: getSelectedAvatarShape(),
+            show_status_badge: showStatusCheckbox ? showStatusCheckbox.checked : true,
         };
 
         // Start loading state
         setButtonLoading(profileSaveButton, true);
 
         try {
-            // Make network request to your endpoint
             const response = await fetch('/api/profile/update/', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    'X-CSRFToken' : getCSRFToken()
+                    'X-CSRFToken': getCSRFToken()
                 },
                 body: JSON.stringify(payload)
             });
 
             const data = await response.json();
 
-            // Handle server response
-            if(data.ok){
-                //update snapshot so system knows the new values are original
+            if (data.ok) {
+                // Update live state with saved values
+                if (data.avatar_url_64) {
+                    originalAvatarUrl = data.avatar_url_64;
+                    const previewAvatar = document.getElementById('profile-preview-avatar');
+                    if (previewAvatar) previewAvatar.src = data.avatar_url_64;
+                    const topAvatar = document.querySelector('.profile-widget-avatar');
+                    if (topAvatar) topAvatar.src = data.avatar_url_64;
+                }
+                if (data.banner_color) {
+                    originalBannerColor = data.banner_color;
+                    const previewBanner = document.getElementById('profile-preview-banner');
+                    if (previewBanner) previewBanner.style.backgroundColor = data.banner_color;
+                }
+                if (data.banner_url_sm !== undefined) {
+                    originalBannerUrl = data.banner_url_sm;
+                    const previewBanner = document.getElementById('profile-preview-banner');
+                    if (previewBanner) {
+                        if (data.banner_url_sm) {
+                            previewBanner.style.backgroundImage = `url('${data.banner_url_sm}')`;
+                            previewBanner.style.backgroundSize = 'cover';
+                            previewBanner.style.backgroundPosition = 'center';
+                        } else {
+                            previewBanner.style.backgroundImage = '';
+                        }
+                    }
+                }
+                if (data.effective_display_name) {
+                    const topName = document.querySelector('.profile-widget-name');
+                    if (topName) topName.textContent = data.effective_display_name;
+                }
+
+                if (data.avatar_shape) {
+                    originalAvatarShape = data.avatar_shape;
+                }
+                if (data.show_status_badge !== undefined) {
+                    originalShowStatusBadge = data.show_status_badge;
+                }
+
+                // Reset staged states
+                stagedAvatarData = null;
+                stagedBannerData = null;
+                stagedBannerColor = null;
+                removeAvatar = false;
+                removeBanner = false;
+
                 snapshotEditorValues();
                 updateSaveBarVisibility();
-                Notification.success(data.message || "Profile updated sucessfully!");
             } else {
-                Notification.error(data.message || "Failed to update profile.");
+                alert(data.message || 'Failed to save profile changes.');
             }
-        } catch(error) {
-            Notification.error(`Connection Error: ${error}`);
+        } catch (error) {
+            console.error('Error saving profile:', error);
+            alert('An unexpected error occurred while saving.');
         } finally {
-            // End loading state
             setButtonLoading(profileSaveButton, false);
         }
     });
 }
-// Take the initial snapshot now, and refresh it whenever the profile modal opens
-// so a previous session's edits don't immediately show the bar again.
+
+// Initial snapshot
 snapshotEditorValues();
 // #endregion
 
@@ -788,6 +1123,9 @@ snapshotEditorValues();
 function openProfileModal() {
     if (profileModal) profileModal.classList.add("is-open");
     snapshotEditorValues();
+    updateDisplayNameLive();
+    updatePronounsLive();
+    updateBioLive();
     updateSaveBarVisibility();
 }
 

@@ -11,11 +11,11 @@
                 <button id="profile-close-button" aria-label="Close"></button>
             </div>
         </div>
-        <div class="window-body" style="display: flex; gap: 6px; padding: 6px; height: 400px;">
+        <div class="window-body" style="display: flex; gap: 6px; padding: 6px; height: 420px; box-sizing: border-box;">
 
             <!-- Sidebar as a vertical tab list -->
-            <div class="window">
-                <div class="profile-sidebar">
+            <div class="window" style="height: 100%;">
+                <div class="profile-sidebar" style="height: 100%;">
 
                     <div class="sidebar-item active" data-tab="profile">
                         <div class="sidebar-content">
@@ -42,8 +42,8 @@
             </div>
 
             <!-- Editor panel -->
-            <div class="window profile-editor-window" style="width: 320px">
-                <div class="window-body">
+            <div class="window profile-editor-window" style="width: 320px; height: 100%; position: relative;">
+                <div class="window-body" style="height: 100%; overflow-y: auto; overflow-x: hidden; box-sizing: border-box; padding-bottom: 60px;">
 
                     <!-- 
                     ░█████████  ░█████████    ░██████   ░██████████░██████░██         ░██████████ 
@@ -82,6 +82,31 @@
                         </div>
 
                         <div class="setting-group">
+
+                            <label>Pronouns</label>
+
+                            <div class="input-row">
+
+                                <input
+                                    id="pronouns-input"
+                                    type="text"
+                                    maxlength="32"
+                                    placeholder="e.g. they/them, she/her, he/him"
+                                    value="{{ request.user.profile.pronouns }}"
+                                >
+
+                                <div
+                                    id="editor-pronouns-counter"
+                                    class="setting-counter"
+                                >
+                                    0/32
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                        <div class="setting-group">
                             <label>Avatar</label>
                             <div class="button-row">
                                 <button id="change-avatar-button">
@@ -91,6 +116,35 @@
                                 <button id="remove-avatar-button">
                                     Remove Avatar
                                 </button>
+                            </div>
+
+                            <div class="field-row" style="gap: 12px; margin-top: 8px;">
+                                <input
+                                    type="radio"
+                                    id="shape-square"
+                                    name="avatar_shape"
+                                    value="square"
+                                    {% if request.user.profile.avatar_shape == 'square' or not request.user.profile.avatar_shape %}checked{% endif %}
+                                >
+                                <label for="shape-square">Square</label>
+
+                                <input
+                                    type="radio"
+                                    id="shape-round"
+                                    name="avatar_shape"
+                                    value="round"
+                                    {% if request.user.profile.avatar_shape == 'round' %}checked{% endif %}
+                                >
+                                <label for="shape-round">Round</label>
+                            </div>
+
+                            <div class="field-row" style="margin-top: 6px;">
+                                <input
+                                    type="checkbox"
+                                    id="show-status-checkbox"
+                                    {% if request.user.profile.show_status_badge %}checked{% endif %}
+                                >
+                                <label for="show-status-checkbox">Show status badge on avatar</label>
                             </div>
                         </div>
 
@@ -116,7 +170,7 @@
                                     class="bio-textarea"
                                     rows="8"
                                     maxlength="200"
-                                ></textarea>
+                                >{{ request.user.profile.bio }}</textarea>
 
                                 <div
                                     id="bio-text-counter"
@@ -504,7 +558,7 @@
 
 
 <div id="cropper-modal" class="modal-overlay">
-    <div class="window" style="width: 420px;">
+    <div class="window" style="width: 470px;">
         
         <!-- The Title Bar -->
         <div class="title-bar" id="cropper-title-bar">
@@ -515,9 +569,30 @@
         </div>
 
         <div class="window-body">
-            <!-- STATE 1: Select Image -->
-            <div id="cropper-select-state" style="text-align: center; padding: 20px;">
-                <button id="cropper-upload-button">Upload Image</button>
+            <!-- STATE 1: Select Image / Color -->
+            <div id="cropper-select-state" style="padding: 16px 20px;">
+                
+                <!-- Avatar Select Mode -->
+                <div id="cropper-avatar-select" style="text-align: center; padding: 10px;">
+                    <button id="cropper-upload-button">Upload Image</button>
+                </div>
+
+                <!-- Banner Select Mode (Images & Solid Color) -->
+                <div id="cropper-banner-select" style="display: none;">
+                    <div class="banner-select-grid">
+                        <div class="banner-select-col">
+                            <label class="banner-select-label">Images</label>
+                            <button id="cropper-banner-upload-button">Upload Image</button>
+                        </div>
+                        <div class="banner-select-col">
+                            <label class="banner-select-label">Solid Color</label>
+                            <button id="cropper-color-button" class="cropper-color-swatch-btn" title="Choose solid banner color"></button>
+                            <span id="cropper-color-hex" class="cropper-color-hex-text">{{ request.user.profile.banner_color|default:'#000000' }}</span>
+                            <input type="color" id="cropper-color-input" value="{{ request.user.profile.banner_color|default:'#000000' }}" style="display: none;">
+                        </div>
+                    </div>
+                </div>
+
                 <!-- Hidden file input -->
                 <input type="file" id="cropper-file-input" accept="image/png, image/jpeg, image/gif" style="display: none;">
             </div>
@@ -542,6 +617,79 @@
                 <div class="modal-buttons" style="margin-top: 10px;">
                     <button id="cropper-cancel-button">Cancel</button>
                     <button id="cropper-save-button" class="save-bar-save-button">Done</button>
+                </div>
+            </div>
+
+            <!-- STATE 3: Edit Colors (Custom Win98 Color Picker) -->
+            <div id="cropper-color-state" style="display: none; padding: 10px 12px; box-sizing: border-box;">
+                <div class="color-picker-container">
+                    
+                    <!-- Left: Basic Colors 48 Swatches -->
+                    <div class="color-picker-left">
+                        <fieldset>
+                            <legend>Basic colors:</legend>
+                            <div id="win98-color-grid" class="win98-color-grid"></div>
+                        </fieldset>
+                    </div>
+
+                    <!-- Right: Spectrum Canvas + Luminosity Bar + Preview Box -->
+                    <div class="color-picker-right">
+                        <fieldset>
+                            <legend>Custom color:</legend>
+                            
+                            <div class="color-picker-controls-row">
+                                <!-- 2D Spectrum Gradient Canvas -->
+                                <div class="color-spectrum-wrapper">
+                                    <canvas id="color-spectrum-canvas" width="120" height="100"></canvas>
+                                    <div id="color-spectrum-cursor" class="color-spectrum-cursor"></div>
+                                </div>
+
+                                <!-- Luminosity Vertical Gradient Canvas -->
+                                <div class="color-lum-wrapper">
+                                    <canvas id="color-lum-canvas" width="14" height="100"></canvas>
+                                    <div id="color-lum-cursor" class="color-lum-cursor"></div>
+                                </div>
+                            </div>
+
+                            <!-- Color Preview Swatch & Hex / RGB Inputs -->
+                            <div class="color-values-row">
+                                <div class="color-preview-box">
+                                    <div id="color-picker-preview-swatch" class="color-preview-swatch"></div>
+                                    <label class="color-preview-label">Color</label>
+                                </div>
+                                <div class="color-inputs-col">
+                                    <div class="color-input-field">
+                                        <label for="color-hex-input">Hex:</label>
+                                        <input type="text" id="color-hex-input" class="color-text-input" maxlength="7" value="#000000">
+                                    </div>
+                                    <div class="color-input-field-row">
+                                        <div class="color-input-field mini">
+                                            <label for="color-r-input">R:</label>
+                                            <input type="number" id="color-r-input" min="0" max="255" value="0">
+                                        </div>
+                                        <div class="color-input-field mini">
+                                            <label for="color-g-input">G:</label>
+                                            <input type="number" id="color-g-input" min="0" max="255" value="0">
+                                        </div>
+                                        <div class="color-input-field mini">
+                                            <label for="color-b-input">B:</label>
+                                            <input type="number" id="color-b-input" min="0" max="255" value="0">
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </div>
+
+                </div>
+
+                <!-- Navigation & Action Buttons -->
+                <div class="modal-buttons" style="margin-top: 10px; justify-content: space-between;">
+                    <button id="cropper-color-back-button">&lt; Back</button>
+                    <div style="display: flex; gap: 6px;">
+                        <button id="cropper-color-cancel-button">Cancel</button>
+                        <button id="cropper-color-done-button" class="save-bar-save-button">OK</button>
+                    </div>
                 </div>
             </div>
 

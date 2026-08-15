@@ -2,25 +2,51 @@
 
 <link
     rel="stylesheet"
-    href="{% static 'profile/css/profile_card.css' %}"
+    href="{% static 'profile/css/profile_card.css' %}?v=25"
 >
 
 <div class="profile-card">
 
-    <div class="profile-banner">
-
-        <!-- Banner image will go here later -->
-
+    <div
+        id="profile-preview-banner"
+        class="profile-banner"
+        style="background-color: {{ request.user.profile.banner_color|default:'#000000' }};{% if request.user.profile.banner_key %} background-image: url('{{ request.user.profile.banner_url_sm }}'); background-size: cover; background-position: center;{% endif %}"
+    >
+        <div class="profile-edit-overlay">
+            <img class="profile-edit-pencil" src="{% static '/profile/image/edit-icon.png' %}" alt="Edit Banner" title="Edit Banner">
+        </div>
     </div>
-
     <div class="profile-avatar-container">
 
-        <img
-            id="profile-preview-avatar"
-            class="profile-avatar"
-            src="{% static 'image/default-avatar.png' %}"
-            alt="Avatar"
-        >
+        <div id="profile-avatar-wrapper" class="profile-avatar-wrapper {{ request.user.profile.avatar_shape|default:'square' }}">
+
+            <img
+                id="profile-preview-avatar"
+                class="profile-avatar {{ request.user.profile.avatar_shape|default:'square' }}"
+                src="{{ request.user.profile.avatar_url_64 }}"
+                alt="Avatar"
+            >
+
+            <div class="profile-avatar-edit-overlay">
+                <img class="profile-edit-pencil" src="{% static '/profile/image/edit-icon.png' %}" alt="Edit Avatar" title="Edit Avatar">
+            </div>
+
+            <!-- Status Badge anchored to the bottom right corner -->
+            <div
+                id="profile-preview-status-badge"
+                class="profile-status-badge"
+                {% if not request.user.profile.show_status_badge %}style="display: none;"{% endif %}
+            >
+                <img
+                    id="profile-preview-status-icon"
+                    class="status-badge-icon"
+                    src="{{ request.user.profile.status_icon_url }}"
+                    alt="{{ request.user.profile.get_status_preference_display }}"
+                    title="{{ request.user.profile.get_status_preference_display }}"
+                >
+            </div>
+
+        </div>
 
     </div>
 
@@ -30,69 +56,31 @@
             id="profile-preview-display-name"
             class="profile-display-name"
         >
-            Ekansh
+            {{ request.user.profile.effective_display_name }}
         </div>
 
-        <div
-            id="profile-preview-username"
-            class="profile-username"
-        >
-            @ekansh
-        </div>
-
-        <div
-            class="profile-badges"
-        >
-
-            <img
-                class="badge"
-                src="{% static 'profile/image/edit-icon.png' %}"
-                alt="Badge"
-                title="Badge"
+        <div class="profile-user-row">
+            <span
+                id="profile-preview-username"
+                class="profile-username"
             >
+                @{{ request.user.username }}
+            </span>
 
-            <img
-                class="badge"
-                src="{% static 'profile/image/edit-icon.png' %}"
-                alt="Badge"
-                title="Badge"
+            <span
+                id="profile-preview-pronouns"
+                class="profile-pronouns"
+                {% if not request.user.profile.pronouns %}style="display: none;"{% endif %}
             >
-
-            <img
-                class="badge"
-                src="{% static 'profile/image/edit-icon.png' %}"
-                alt="Badge"
-                title="Badge"
-            >
-
-            <img
-                class="badge"
-                src="{% static 'profile/image/edit-icon.png' %}"
-                alt="Badge"
-                title="Badge"
-            >
-
-        </div>
-
-        <div
-            id="profile-preview-pronouns"
-            class="profile-pronouns"
-        >
-            he/him
-        </div>
-
-        <div
-            id="profile-preview-status"
-            class="profile-status"
-        >
-            Listening to Music
+                {{ request.user.profile.pronouns }}
+            </span>
         </div>
 
         <div
             id="profile-preview-bio"
             class="profile-bio"
         >
-            
+            {{ request.user.profile.bio }}
         </div>
 
     </div>

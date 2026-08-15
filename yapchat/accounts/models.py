@@ -54,6 +54,9 @@ class Profile(models.Model):
     # Display name for the user (can be different from username)
     display_name = models.CharField(max_length=32, blank=True)
 
+    # Pronouns (e.g. they/them, she/her, he/him)
+    pronouns = models.CharField(max_length=32, blank=True, default="")
+
     # Custom display name color
     display_name_color = models.CharField(
         max_length=7,
@@ -82,6 +85,23 @@ class Profile(models.Model):
     # Banner image (optional)
     banner_key = models.CharField(max_length=500, blank=True, default="")
     
+    # Banner background color (default solid black)
+    banner_color = models.CharField(max_length=7, default="#000000", blank=True)
+    
+    # Class to define avatar shape preference
+    class AvatarShape(models.TextChoices):
+        SQUARE = 'square', 'Square'
+        ROUND = 'round', 'Round'
+
+    avatar_shape = models.CharField(
+        max_length=10,
+        choices=AvatarShape.choices,
+        default=AvatarShape.SQUARE
+    )
+
+    # Status badge display toggle
+    show_status_badge = models.BooleanField(default=True)
+
     # Presence status preference (e.g., online, offline, away)
     # we use duplicate choices (online, Online) 
     # because the first value is what gets stored in the database (e.g., 'online') and the second value is what gets displayed in forms and admin interfaces (e.g., 'Online')
@@ -104,22 +124,101 @@ class Profile(models.Model):
         return self.display_name or self.user.username
     
     @property
+    def status_icon_url(self):
+        pref = (self.status_preference or "online").lower()
+        if pref in ("online", "idle", "offline", "dnd"):
+            return f"https://cdn.lesbianhangout.online/icons/{pref}.png"
+        return "https://cdn.lesbianhangout.online/icons/online.png"
+
+    @property
     def frame_url(self):
         if not self.frame_key:
             return ""
-        return f"https://cdn.yap.chat/{self.frame_key}"
-    #Helper method to get avatar URL 
+        if self.frame_key.startswith("http://") or self.frame_key.startswith("https://") or self.frame_key.startswith("/"):
+            return self.frame_key
+        cdn_domain = getattr(settings, "R2_CUSTOM_DOMAIN", "https://cdn.lesbianhangout.online").rstrip("/")
+        return f"{cdn_domain}/{self.frame_key}"
+
     @property
     def avatar_url(self):
         if not self.avatar_key:
             return "/static/image/default-avatar.png"
-        return f"https://cdn.yap.chat/{self.avatar_key}"
+        if self.avatar_key.startswith("http://") or self.avatar_key.startswith("https://") or self.avatar_key.startswith("/"):
+            return self.avatar_key
+        cdn_domain = getattr(settings, "R2_CUSTOM_DOMAIN", "https://cdn.lesbianhangout.online").rstrip("/")
+        return f"{cdn_domain}/{self.avatar_key}"
+
+    def get_avatar_url(self, size="64"):
+        # Returns URL for a specific avatar size variant (32, 64, 128, 256)
+        if not self.avatar_key:
+            return "/static/image/default-avatar.png"
+
+        base_path = self.avatar_key[:-5] if self.avatar_key.endswith(".webp") else self.avatar_key
+        variant_path = f"{base_path}_{size}.webp"
+
+        if self.avatar_key.startswith("http://") or self.avatar_key.startswith("https://") or self.avatar_key.startswith("/"):
+            return variant_path
+
+        cdn_domain = getattr(settings, "R2_CUSTOM_DOMAIN", "https://cdn.yap.chat").rstrip("/")
+        return f"{cdn_domain}/{variant_path}"
+
     @property
     def banner_url(self):
         if not self.banner_key:
-            return "/static/image/default-banner.png"
-        return f"https://cdn.yap.chat/{self.banner_key}"
+            return ""
+        if self.banner_key.startswith("http://") or self.banner_key.startswith("https://") or self.banner_key.startswith("/"):
+            return self.banner_key
+        cdn_domain = getattr(settings, "R2_CUSTOM_DOMAIN", "https://cdn.yap.chat").rstrip("/")
+        return f"{cdn_domain}/{self.banner_key}"
 
+    def get_banner_url(self, size="md"):
+        # Returns URL for a specific banner size variant (sm, md, lg)
+        if not self.banner_key:
+            return ""
+
+        base_path = self.banner_key[:-5] if self.banner_key.endswith(".webp") else self.banner_key
+        variant_path = f"{base_path}_{size}.webp"
+
+        if self.banner_key.startswith("http://") or self.banner_key.startswith("https://") or self.banner_key.startswith("/"):
+            return variant_path
+
+        cdn_domain = getattr(settings, "R2_CUSTOM_DOMAIN", "https://cdn.yap.chat").rstrip("/")
+        return f"{cdn_domain}/{variant_path}"
+
+    @property
+    def avatar_url_32(self):
+        return self.get_avatar_url("32")
+    @property
+    def avatar_url_64(self):
+        return self.get_avatar_url("64")
+    @property
+    def avatar_url_128(self):
+        return self.get_avatar_url("128")
+    @property 
+    def avatar_url_256(self):
+        return self.get_avatar_url("256")
+    @property
+    def banner_url_sm(self):
+        return self.get_banner_url("sm")
+    @property
+    def banner_url_md(self):
+        return self.get_banner_url("md")
+    @property
+    def banner_url_lg(self):
+        return self.get_banner_url("lg")
+
+    class AvatarShape(models.TextChoices):
+        SQUARE = "square", "Square"
+        ROUND = "round", "Round"
+
+    avatar_shape = models.CharField(
+        max_length=10,
+        choices=AvatarShape.choices,
+        default=AvatarShape.SQUARE
+    )
+
+    show_status_badge = models.BooleanField(default=True)
+    
 class EmailVerificationToken(models.Model):
     # The account that owns this verification challenge
     user = models.ForeignKey(

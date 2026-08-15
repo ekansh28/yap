@@ -130,24 +130,56 @@
                                                                 
 */
 
+.profile-editor-window {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.profile-editor-window > .window-body {
+    flex: 1;
+    overflow-y: auto !important;
+    overflow-x: hidden;
+    padding-right: 12px;
+    padding-bottom: 60px;
+    box-sizing: border-box;
+    scrollbar-width: thin;
+    scrollbar-color: #c0c0c0 #dfdfdf;
+}
+
+/* Custom 50% thinner Win98 scrollbar (8px instead of standard 16px) */
+.profile-editor-window > .window-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.profile-editor-window > .window-body::-webkit-scrollbar-track {
+    background: #dfdfdf;
+    box-shadow: inset 1px 1px 0px #808080;
+}
+
+.profile-editor-window > .window-body::-webkit-scrollbar-thumb {
+    background: #c0c0c0;
+    box-shadow:
+        inset -1px -1px #0a0a0a,
+        inset 1px 1px #fff,
+        inset -2px -2px grey,
+        inset 2px 2px #dfdfdf;
+}
+
+.profile-editor-window > .window-body::-webkit-scrollbar-thumb:hover {
+    background: #d4d0c8;
+}
+
 .editor-page {
-    opacity: 0;
-    transform: translateY(5px);
-
-    pointer-events: none;
-
-    position: absolute;
-
-    transition:
-        opacity 0.18s ease-in-out,
-        transform 0.18s ease-in-out;
+    display: none;
+    width: 100%;
+    position: relative;
 }
 
 .editor-page.active {
-    opacity: 1;
-    transform: translateY(0);
-
-    pointer-events: auto;
+    display: block;
 }
 
 .setting-group {
@@ -155,16 +187,29 @@
 }
 
 /* Space B/W Label and input/button */
-.setting-group label {
+.setting-group > label,
+.setting-group .setting-header label {
     display: block;
     margin-bottom: 4px;
 }
 
-/* Display NAME */
+.setting-group .field-row label {
+    display: inline-flex;
+    align-items: center;
+    margin-bottom: 0;
+    cursor: pointer;
+}
+
+/* Display NAME & Pronouns input row */
 .input-row {
     display: flex;
     align-items: center;
     gap: 6px;
+}
+
+.input-row input {
+    flex: 1;
+    min-width: 0;
 }
 
 .setting-counter {
@@ -428,10 +473,268 @@
     left: 0;
     box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.5);
     border: 2px dashed white;
-    
+    pointer-events: none;
+    transition: width 0.2s, height 0.2s, margin 0.2s;
+}
+
+.cropper-overlay.avatar-mode {
     width: 200px;
     height: 200px;
     margin: 50px 100px;
-    
-    pointer-events: none; 
+}
+
+.cropper-overlay.banner-mode {
+    width: 345px;
+    height: 100px;
+    margin: 100px 28px;
+}
+
+/* Banner Select (Images & Solid Color) Grid */
+.banner-select-grid {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    gap: 24px;
+    padding: 12px 10px;
+}
+
+.banner-select-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+}
+
+.banner-select-label {
+    font-size: 12px;
+    font-weight: bold;
+    color: #000;
+}
+
+.cropper-color-swatch-btn {
+    width: 68px;
+    height: 26px;
+    padding: 0;
+    cursor: pointer;
+    background-color: #000000;
+    border: 2px solid #808080;
+    box-shadow:
+        inset -1px -1px #fff,
+        inset 1px 1px #0a0a0a,
+        inset -2px -2px #dfdfdf,
+        inset 2px 2px grey;
+}
+
+.cropper-color-swatch-btn.no-color {
+    background: repeating-linear-gradient(
+        45deg,
+        #dfdfdf,
+        #dfdfdf 4px,
+        #a0a0a0 4px,
+        #a0a0a0 8px
+    ) !important;
+}
+
+.cropper-color-hex-text {
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11px;
+    font-weight: bold;
+    color: #222;
+    margin-top: 2px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+/* Win98 Custom Edit Colors Picker */
+.color-picker-container {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.color-picker-left {
+    flex: 0 0 auto;
+    width: 184px;
+    box-sizing: border-box;
+}
+
+.color-picker-right {
+    flex: 1;
+    min-width: 0;
+    box-sizing: border-box;
+}
+
+.color-picker-container fieldset {
+    margin: 0;
+    padding: 6px 8px 8px 8px;
+    height: 100%;
+    box-sizing: border-box;
+}
+
+.win98-color-grid {
+    display: grid;
+    grid-template-columns: repeat(8, 18px);
+    grid-gap: 3px;
+    justify-content: center;
+    padding-top: 4px;
+}
+
+.win98-swatch {
+    width: 18px;
+    height: 16px;
+    box-sizing: border-box;
+    border: 1px solid #808080;
+    cursor: pointer;
+}
+
+.win98-swatch:hover {
+    outline: 1px solid #000;
+}
+
+.win98-swatch.active {
+    outline: 2px solid #000;
+    outline-offset: 1px;
+}
+
+.color-picker-controls-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 6px;
+}
+
+.color-spectrum-wrapper {
+    position: relative;
+    width: 120px;
+    height: 100px;
+    cursor: crosshair;
+    border: 1px solid #808080;
+    box-shadow: inset 1px 1px #000, inset -1px -1px #fff;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.color-spectrum-wrapper canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.color-spectrum-cursor {
+    position: absolute;
+    width: 9px;
+    height: 9px;
+    border: 1.5px solid #fff;
+    border-radius: 50%;
+    box-shadow: 0 0 2px #000;
+    transform: translate(-50%, -50%);
+    pointer-events: none;
+}
+
+.color-lum-wrapper {
+    position: relative;
+    width: 14px;
+    height: 100px;
+    cursor: ns-resize;
+    border: 1px solid #808080;
+    box-shadow: inset 1px 1px #000, inset -1px -1px #fff;
+    user-select: none;
+    box-sizing: border-box;
+}
+
+.color-lum-wrapper canvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.color-lum-cursor {
+    position: absolute;
+    left: -4px;
+    width: 0;
+    height: 0;
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 6px solid #000;
+    transform: translateY(-50%);
+    pointer-events: none;
+}
+
+.color-values-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 4px;
+    box-sizing: border-box;
+}
+
+.color-preview-box {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex-shrink: 0;
+}
+
+.color-preview-swatch {
+    width: 38px;
+    height: 38px;
+    border: 2px solid #808080;
+    box-shadow:
+        inset -1px -1px #fff,
+        inset 1px 1px #0a0a0a,
+        inset -2px -2px #dfdfdf,
+        inset 2px 2px grey;
+    background-color: #000000;
+    box-sizing: border-box;
+}
+
+.color-preview-label {
+    font-size: 10px;
+    color: #444;
+}
+
+.color-inputs-col {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex: 1;
+    min-width: 0;
+}
+
+.color-input-field {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.color-input-field label {
+    font-size: 11px;
+    min-width: 24px;
+}
+
+.color-input-field input {
+    height: 19px;
+    padding: 1px 3px;
+    font-size: 11px;
+    font-family: "Courier New", Courier, monospace;
+    box-sizing: border-box;
+}
+
+.color-input-field.mini label {
+    min-width: 10px;
+}
+
+.color-input-field.mini input {
+    width: 28px;
+    text-align: right;
+}
+
+.color-input-field-row {
+    display: flex;
+    gap: 4px;
+    align-items: center;
 }
