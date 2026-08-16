@@ -696,3 +696,46 @@
         </div>
     </div>
 </div>
+
+<!-- DECORATION CHOOSER MODAL -->
+<div id="decoration-modal" class="modal-overlay">
+    <div class="window decoration-modal-window" style="width: 480px; max-width: 95vw;">
+        
+        <div class="title-bar">
+            <div class="title-bar-text">Change Avatar Decoration</div>
+            <div class="title-bar-controls">
+                <button id="decoration-close-button" aria-label="Close"></button>
+            </div>
+        </div>
+
+        <div class="window-body" style="padding: 10px 12px; box-sizing: border-box; display: flex; flex-direction: column; gap: 8px;">
+            
+            <!-- Category Filter Tabs & Counter -->
+            <div class="decoration-filter-bar">
+                <div class="decoration-tabs">
+                    <button type="button" class="decoration-tab active" data-filter="all">All</button>
+                    <button type="button" class="decoration-tab" data-filter="square">⬛ Square</button>
+                    <button type="button" class="decoration-tab" data-filter="round">⚪ Round</button>
+                </div>
+                <div class="decoration-count" id="decoration-count-text">21 items</div>
+            </div>
+
+            <!-- Sunken Container for Decoration Tiles Grid -->
+            <div class="decoration-grid-container sunken-panel" id="decoration-grid-container">
+                <div class="decoration-grid" id="decoration-grid">
+                    <!-- Populated dynamically via JS -->
+                </div>
+            </div>
+
+            <!-- Bottom Actions -->
+            <div class="modal-buttons" style="margin-top: 4px; justify-content: space-between; align-items: center;">
+                <button id="decoration-remove-button" type="button">Remove Decoration</button>
+                <div style="display: flex; gap: 6px;">
+                    <button id="decoration-cancel-button" type="button">Cancel</button>
+                    <button id="decoration-done-button" type="button" class="save-bar-save-button">Done</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>

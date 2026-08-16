@@ -134,10 +134,26 @@ class Profile(models.Model):
     def frame_url(self):
         if not self.frame_key:
             return ""
-        if self.frame_key.startswith("http://") or self.frame_key.startswith("https://") or self.frame_key.startswith("/"):
-            return self.frame_key
-        cdn_domain = getattr(settings, "R2_CUSTOM_DOMAIN", "https://cdn.lesbianhangout.online").rstrip("/")
-        return f"{cdn_domain}/{self.frame_key}"
+        from .decorations import get_decoration_url
+        return get_decoration_url(self.frame_key)
+
+    @property
+    def decoration_url(self):
+        return self.frame_url
+
+    @property
+    def decoration_style(self):
+        if not self.frame_key:
+            return "transform: translate(-50%, -50%);"
+        from .decorations import get_decoration_transform
+        return get_decoration_transform(self.frame_key)
+
+    @property
+    def topbar_decoration_style(self):
+        if not self.frame_key:
+            return "transform: translate(-50%, -50%);"
+        from .decorations import get_decoration_transform
+        return get_decoration_transform(self.frame_key, is_topbar=True)
 
     @property
     def avatar_url(self):
@@ -207,18 +223,6 @@ class Profile(models.Model):
     def banner_url_lg(self):
         return self.get_banner_url("lg")
 
-    class AvatarShape(models.TextChoices):
-        SQUARE = "square", "Square"
-        ROUND = "round", "Round"
-
-    avatar_shape = models.CharField(
-        max_length=10,
-        choices=AvatarShape.choices,
-        default=AvatarShape.SQUARE
-    )
-
-    show_status_badge = models.BooleanField(default=True)
-    
 class EmailVerificationToken(models.Model):
     # The account that owns this verification challenge
     user = models.ForeignKey(

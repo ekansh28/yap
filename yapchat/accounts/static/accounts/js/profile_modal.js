@@ -1,5 +1,5 @@
 import Notification from './Components/Notification/Notification.js?v=2';
-import './profile_media.js';
+import './profile_media.js?v=26';
 
 // Self-contained helpers
 export function setFieldHelp(helpElement, message, isVisible, state = "info") {
@@ -120,8 +120,16 @@ const pronounsCounter = profileModal ? profileModal.querySelector('#editor-prono
 const bioInput = profileModal ? profileModal.querySelector('#bio-input') : document.getElementById('bio-input');
 const bioTextCounter = profileModal ? profileModal.querySelector('#bio-text-counter') : document.getElementById('bio-text-counter');
 
-
-
+// Decoration modal elements
+const changeDecorationButton = document.getElementById("change-decoration-button");
+const decorationModal = document.getElementById("decoration-modal");
+const decorationCloseButton = document.getElementById("decoration-close-button");
+const decorationCancelButton = document.getElementById("decoration-cancel-button");
+const decorationDoneButton = document.getElementById("decoration-done-button");
+const decorationRemoveButton = document.getElementById("decoration-remove-button");
+const decorationGrid = document.getElementById("decoration-grid");
+const decorationCountText = document.getElementById("decoration-count-text");
+const decorationTabs = document.querySelectorAll(".decoration-tab");
 
 // #endregion
 
@@ -254,6 +262,7 @@ document.addEventListener("keydown", (event) => {
         closeModal(emailModal);
         closeModal(passwordModal);
         closeModal(deleteAccountModal);
+        closeModal(decorationModal);
         if (profileModal && profileModal.classList.contains("is-open")) {
             closeProfileModal();
         }
@@ -837,6 +846,260 @@ removeBannerButton?.addEventListener('click', () => {
     updateSaveBarVisibility();
 });
 
+// Avatar Decorations Catalog
+let DECORATIONS = [
+    // SQUARE DECORATIONS
+    { id: "square/sparkles_heart.gif", name: "Sparkles Heart", shape: "square", animated: true, url: "/static/accounts/decorations/square/sparkles_heart.gif", scale: 0.9 },
+    { id: "square/floral.png", name: "Floral", shape: "square", animated: false, url: "/static/accounts/decorations/square/floral.png" },
+    { id: "square/emerald.gif", name: "Emerald", shape: "square", animated: true, url: "/static/accounts/decorations/square/emerald.gif" },
+    { id: "square/stars.gif", name: "Stars", shape: "square", animated: true, url: "/static/accounts/decorations/square/stars.gif" },
+    { id: "square/barbs.png", name: "Barbs", shape: "square", animated: false, url: "/static/accounts/decorations/square/barbs.png" },
+    { id: "square/blood.png", name: "Blood", shape: "square", animated: false, url: "/static/accounts/decorations/square/blood.png" },
+    { id: "square/bones.png", name: "Bones", shape: "square", animated: false, url: "/static/accounts/decorations/square/bones.png" },
+    { id: "square/brains.png", name: "Brains", shape: "square", animated: false, url: "/static/accounts/decorations/square/brains.png" },
+    { id: "square/bubble_star.gif", name: "Bubble Star", shape: "square", animated: true, url: "/static/accounts/decorations/square/bubble_star.gif" },
+    { id: "square/glitter.gif", name: "Glitter", shape: "square", animated: true, url: "/static/accounts/decorations/square/glitter.gif" },
+    { id: "square/glitters_2.gif", name: "Glitters II", shape: "square", animated: true, url: "/static/accounts/decorations/square/glitters_2.gif", scale: 0.87 },
+    { id: "square/jewels.gif", name: "Jewels", shape: "square", animated: true, url: "/static/accounts/decorations/square/jewels.gif" },
+    { id: "square/royal.png", name: "Royal", shape: "square", animated: false, url: "/static/accounts/decorations/square/royal.png" },
+    { id: "square/royal_2.gif", name: "Royal II", shape: "square", animated: true, url: "/static/accounts/decorations/square/royal_2.gif" },
+    { id: "square/thorns.png", name: "Thorns", shape: "square", animated: false, url: "/static/accounts/decorations/square/thorns.png" },
+    { id: "square/glittery.gif", name: "Glittery", shape: "square", animated: true, url: "/static/accounts/decorations/square/glittery.gif" },
+    { id: "square/king.png", name: "King", shape: "square", animated: false, url: "/static/accounts/decorations/square/king.png" },
+    { id: "square/rainbow.gif", name: "Rainbow", shape: "square", animated: true, url: "/static/accounts/decorations/square/rainbow.gif" },
+    { id: "square/teeth.png", name: "Teeth", shape: "square", animated: false, url: "/static/accounts/decorations/square/teeth.png" },
+    { id: "square/royal_blood.png", name: "Royal Blood", shape: "square", animated: false, url: "/static/accounts/decorations/square/royal_blood.png" },
+    { id: "square/barbed.png", name: "Barbed", shape: "square", animated: false, url: "/static/accounts/decorations/square/barbed.png" },
+
+    // ROUND DECORATIONS
+    { id: "round/horns.png", name: "Horns", shape: "round", animated: false, url: "/static/accounts/decorations/round/horns.png?v=2" },
+    { id: "round/coquette.png", name: "Coquette", shape: "round", animated: false, url: "/static/accounts/decorations/round/coquette.png" },
+    { id: "round/flowers.png", name: "Flowers", shape: "round", animated: false, url: "/static/accounts/decorations/round/flowers.png" },
+    { id: "round/nyan_cat.png", name: "Nyan Cat", shape: "round", animated: false, url: "/static/accounts/decorations/round/nyan_cat.png" },
+    { id: "round/polka_dot.png", name: "Polka Dot", shape: "round", animated: false, url: "/static/accounts/decorations/round/polka_dot.png" },
+    { id: "round/tides.png", name: "Tides", shape: "round", animated: false, url: "/static/accounts/decorations/round/tides.png" }
+];
+
+const DECORATION_MAP = new Map(DECORATIONS.map(d => [d.id, d]));
+
+let originalDecorationKey = '';
+let stagedDecorationKey = '';
+let decorationFilter = 'all';
+
+function getDecorationUrl(key) {
+    if (!key) return '';
+    const item = DECORATION_MAP.get(key);
+    if (item) return item.url;
+    if (key.startsWith('http://') || key.startsWith('https://') || key.startsWith('/')) return key;
+    if (key.startsWith('decorations/')) return `/static/accounts/${key}`;
+    if (key.includes('/')) return `/static/accounts/decorations/${key}`;
+    return key;
+}
+
+function applyDecorationPreview(key) {
+    const previewDec = document.getElementById('profile-preview-decoration');
+    if (!previewDec) return;
+    const item = DECORATION_MAP.get(key);
+    const url = getDecorationUrl(key);
+    if (url) {
+        previewDec.src = url;
+        previewDec.style.display = 'block';
+        const offX = item ? (item.offsetX ?? item.offset_x ?? 0) : 0;
+        const offY = item ? (item.offsetY ?? item.offset_y ?? 0) : 0;
+        const scale = item ? (item.scale ?? 1.0) : 1.0;
+        previewDec.style.transform = `translate(calc(-50% + ${offX}px), calc(-50% + ${offY}px)) scale(${scale})`;
+    } else {
+        previewDec.style.display = 'none';
+        previewDec.src = '';
+        previewDec.style.transform = 'translate(-50%, -50%)';
+    }
+}
+
+function applyTopbarDecoration(key) {
+    const topDec = document.getElementById('topbar-avatar-decoration');
+    if (!topDec) return;
+    const item = DECORATION_MAP.get(key);
+    const url = getDecorationUrl(key);
+    if (url) {
+        topDec.src = url;
+        topDec.style.display = 'block';
+        const offX = item ? ((item.offsetX ?? item.offset_x ?? 0) * (16 / 64)) : 0;
+        const offY = item ? ((item.offsetY ?? item.offset_y ?? 0) * (16 / 64)) : 0;
+        const scale = item ? (item.scale ?? 1.0) : 1.0;
+        topDec.style.transform = `translate(calc(-50% + ${offX}px), calc(-50% + ${offY}px)) scale(${scale})`;
+    } else {
+        topDec.style.display = 'none';
+        topDec.src = '';
+        topDec.style.transform = 'translate(-50%, -50%)';
+    }
+}
+
+async function loadDecorationsFromBackend() {
+    try {
+        const res = await fetch('/api/profile/decorations/');
+        const data = await res.json();
+        if (data.ok && Array.isArray(data.decorations)) {
+            DECORATIONS = data.decorations;
+            DECORATION_MAP.clear();
+            data.decorations.forEach(d => {
+                DECORATION_MAP.set(d.id, d);
+            });
+            applyDecorationPreview(stagedDecorationKey || originalDecorationKey);
+            applyTopbarDecoration(originalDecorationKey);
+            if (decorationGrid) {
+                renderDecorationGrid();
+            }
+        }
+    } catch (e) {
+        console.warn('Could not sync decorations from server:', e);
+    }
+}
+
+loadDecorationsFromBackend();
+
+function renderDecorationGrid() {
+    if (!decorationGrid) return;
+    decorationGrid.innerHTML = '';
+
+    const previewAvatar = document.getElementById('profile-preview-avatar');
+    const userAvatarSrc = (previewAvatar && previewAvatar.src) ? previewAvatar.src : '/static/image/default-avatar.png';
+    const currentShape = getSelectedAvatarShape();
+    const items = Array.from(DECORATION_MAP.values());
+    const filtered = items.filter(item => {
+        if (decorationFilter === 'all') return true;
+        return item.shape === decorationFilter;
+    });
+
+    if (decorationCountText) {
+        decorationCountText.textContent = `${filtered.length} items`;
+    }
+
+    // 1. None / Remove tile
+    const noneTile = document.createElement('div');
+    const isNoneSelected = !stagedDecorationKey;
+    noneTile.className = `decoration-tile ${isNoneSelected ? 'is-selected' : ''}`;
+    noneTile.setAttribute('data-id', '');
+    noneTile.innerHTML = `
+        <div class="decoration-tile-preview">
+            <img class="decoration-tile-preview-avatar ${currentShape}" src="${userAvatarSrc}" alt="Avatar">
+            <svg class="decoration-tile-none-icon" viewBox="0 0 24 24" fill="none" stroke="#d9534f" stroke-width="2.5" stroke-linecap="round" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 28px; height: 28px; pointer-events: none; z-index: 3;">
+                <circle cx="12" cy="12" r="9"></circle>
+                <line x1="5.7" y1="5.7" x2="18.3" y2="18.3"></line>
+            </svg>
+        </div>
+        <div class="decoration-tile-name">None</div>
+    `;
+
+    noneTile.addEventListener('mouseenter', () => {
+        applyDecorationPreview('');
+    });
+    noneTile.addEventListener('mouseleave', () => {
+        applyDecorationPreview(stagedDecorationKey);
+        applyAvatarShape(getSelectedAvatarShape());
+    });
+    noneTile.addEventListener('click', () => {
+        stagedDecorationKey = '';
+        applyDecorationPreview('');
+        renderDecorationGrid();
+        updateSaveBarVisibility();
+    });
+    decorationGrid.appendChild(noneTile);
+
+    // 2. Filtered decoration items
+    filtered.forEach(item => {
+        const tile = document.createElement('div');
+        const isSelected = stagedDecorationKey === item.id;
+        tile.className = `decoration-tile ${isSelected ? 'is-selected' : ''}`;
+        tile.setAttribute('data-id', item.id);
+
+        let badgeHtml = item.animated ? '<span class="decoration-badge-gif">GIF</span>' : '';
+        const offX = (item.offsetX ?? item.offset_x ?? 0) * (48 / 64);
+        const offY = (item.offsetY ?? item.offset_y ?? 0) * (48 / 64);
+        const scale = item.scale ?? 1.0;
+        const transformStyle = `style="transform: translate(calc(-50% + ${offX}px), calc(-50% + ${offY}px)) scale(${scale});"`;
+        const avatarShapeClass = item.shape || currentShape;
+
+        tile.innerHTML = `
+            ${badgeHtml}
+            <div class="decoration-tile-preview">
+                <img class="decoration-tile-preview-avatar ${avatarShapeClass}" src="${userAvatarSrc}" alt="Avatar">
+                <img class="decoration-tile-preview-overlay" src="${item.url}" alt="${item.name}" loading="lazy" ${transformStyle}>
+            </div>
+            <div class="decoration-tile-name" title="${item.name}">${item.name}</div>
+        `;
+
+        tile.addEventListener('mouseenter', () => {
+            applyDecorationPreview(item.id);
+            if (item.shape) {
+                applyAvatarShape(item.shape);
+            }
+        });
+        tile.addEventListener('mouseleave', () => {
+            applyDecorationPreview(stagedDecorationKey);
+            applyAvatarShape(getSelectedAvatarShape());
+        });
+        tile.addEventListener('click', () => {
+            stagedDecorationKey = item.id;
+            applyDecorationPreview(item.id);
+            if (item.shape === 'round') {
+                selectAvatarShape('round');
+            } else if (item.shape === 'square') {
+                selectAvatarShape('square');
+            }
+            renderDecorationGrid();
+            updateSaveBarVisibility();
+        });
+
+        decorationGrid.appendChild(tile);
+    });
+}
+
+decorationTabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+        decorationTabs.forEach(t => t.classList.remove('active'));
+        tab.classList.add('active');
+        decorationFilter = tab.getAttribute('data-filter') || 'all';
+        renderDecorationGrid();
+    });
+});
+
+if (changeDecorationButton) {
+    changeDecorationButton.addEventListener('click', () => {
+        openModal(decorationModal);
+        renderDecorationGrid();
+    });
+}
+
+if (decorationCloseButton) {
+    decorationCloseButton.addEventListener('click', () => closeModal(decorationModal));
+}
+
+if (decorationCancelButton) {
+    decorationCancelButton.addEventListener('click', () => {
+        stagedDecorationKey = originalDecorationKey;
+        applyDecorationPreview(originalDecorationKey);
+        selectAvatarShape(originalAvatarShape);
+        closeModal(decorationModal);
+        updateSaveBarVisibility();
+    });
+}
+
+if (decorationDoneButton) {
+    decorationDoneButton.addEventListener('click', () => {
+        closeModal(decorationModal);
+    });
+}
+
+if (decorationRemoveButton) {
+    decorationRemoveButton.addEventListener('click', () => {
+        stagedDecorationKey = '';
+        applyDecorationPreview('');
+        renderDecorationGrid();
+        updateSaveBarVisibility();
+        closeModal(decorationModal);
+    });
+}
+
 // Shape & Status Badge Controls
 const shapeRadios = document.querySelectorAll('input[name="avatar_shape"]');
 const showStatusCheckbox = document.getElementById('show-status-checkbox');
@@ -872,6 +1135,15 @@ function getSelectedAvatarShape() {
     return checked ? checked.value : 'square';
 }
 
+function selectAvatarShape(shape) {
+    if (!shape) return;
+    const radio = document.querySelector(`input[name="avatar_shape"][value="${shape}"]`);
+    if (radio) {
+        radio.checked = true;
+    }
+    applyAvatarShape(shape);
+}
+
 function applyAvatarShape(shape) {
     const wrapper = document.getElementById('profile-avatar-wrapper');
     const avatar = document.getElementById('profile-preview-avatar');
@@ -897,6 +1169,7 @@ function applyStatusBadgeVisibility(show) {
 shapeRadios.forEach((radio) => {
     const handler = () => {
         applyAvatarShape(radio.value);
+        renderDecorationGrid();
         updateSaveBarVisibility();
     };
     radio.addEventListener('change', handler);
@@ -935,8 +1208,17 @@ function snapshotEditorValues() {
     stagedBannerColor = null;
     originalAvatarShape = getSelectedAvatarShape();
     originalShowStatusBadge = showStatusCheckbox ? showStatusCheckbox.checked : true;
+
+    const previewDec = document.getElementById('profile-preview-decoration');
+    if (previewDec) {
+        originalDecorationKey = previewDec.getAttribute('data-decoration-key') || '';
+    }
+    stagedDecorationKey = originalDecorationKey;
+
     applyAvatarShape(originalAvatarShape);
     applyStatusBadgeVisibility(originalShowStatusBadge);
+    applyDecorationPreview(originalDecorationKey);
+    applyTopbarDecoration(originalDecorationKey);
 }
 
 function hasUnsavedEditorChanges() {
@@ -947,7 +1229,8 @@ function hasUnsavedEditorChanges() {
     const shapeChanged = getSelectedAvatarShape() !== originalAvatarShape;
     const statusChanged = showStatusCheckbox ? (showStatusCheckbox.checked !== originalShowStatusBadge) : false;
     const bannerColorChanged = stagedBannerColor !== null && stagedBannerColor !== originalBannerColor;
-    return inputChanged || mediaChanged || shapeChanged || statusChanged || bannerColorChanged;
+    const decorationChanged = stagedDecorationKey !== originalDecorationKey;
+    return inputChanged || mediaChanged || shapeChanged || statusChanged || bannerColorChanged || decorationChanged;
 }
 
 function updateSaveBarVisibility() {
@@ -1018,6 +1301,11 @@ if (profileResetButton) {
         }
         applyStatusBadgeVisibility(originalShowStatusBadge);
 
+        // Reset Decoration
+        stagedDecorationKey = originalDecorationKey;
+        applyDecorationPreview(originalDecorationKey);
+        renderDecorationGrid();
+
         // Hide Save Bar
         updateSaveBarVisibility();
     });
@@ -1038,6 +1326,7 @@ if (profileSaveButton) {
             remove_banner: removeBanner,
             avatar_shape: getSelectedAvatarShape(),
             show_status_badge: showStatusCheckbox ? showStatusCheckbox.checked : true,
+            decoration_key: stagedDecorationKey,
         };
 
         // Start loading state
@@ -1092,6 +1381,17 @@ if (profileSaveButton) {
                 }
                 if (data.show_status_badge !== undefined) {
                     originalShowStatusBadge = data.show_status_badge;
+                }
+
+                if (data.decoration_key !== undefined) {
+                    originalDecorationKey = data.decoration_key;
+                    stagedDecorationKey = data.decoration_key;
+                    const previewDec = document.getElementById('profile-preview-decoration');
+                    if (previewDec) {
+                        previewDec.setAttribute('data-decoration-key', data.decoration_key);
+                    }
+                    applyDecorationPreview(data.decoration_key);
+                    applyTopbarDecoration(data.decoration_key);
                 }
 
                 // Reset staged states

@@ -2,7 +2,7 @@
 
 <link
     rel="stylesheet"
-    href="{% static 'profile/css/profile_card.css' %}?v=25"
+    href="{% static 'profile/css/profile_card.css' %}?v=41"
 >
 
 <div class="profile-card">
@@ -25,6 +25,16 @@
                 class="profile-avatar {{ request.user.profile.avatar_shape|default:'square' }}"
                 src="{{ request.user.profile.avatar_url_64 }}"
                 alt="Avatar"
+            >
+
+            <!-- Avatar Decoration Overlay -->
+            <img
+                id="profile-preview-decoration"
+                class="profile-avatar-decoration"
+                src="{{ request.user.profile.decoration_url }}"
+                data-decoration-key="{{ request.user.profile.frame_key|default:'' }}"
+                alt="Avatar Decoration"
+                style="{{ request.user.profile.decoration_style }}{% if not request.user.profile.frame_key %} display: none;{% endif %}"
             >
 
             <div class="profile-avatar-edit-overlay">

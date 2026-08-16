@@ -6,10 +6,10 @@
     <meta charset="utf-8"/>
     <link rel="stylesheet" href="https://unpkg.com/98.css">
 
-    <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    <link rel="stylesheet" href="{% static 'css/main.css' %}?v=32">
     <link rel="stylesheet" href="{% static 'js/Components/Notification/Notification.css' %}?v=2">
     <link rel="stylesheet" href="{% static 'accounts/css/auth_modal.css' %}">
-    <link rel="stylesheet" href="{% static 'accounts/css/profile_modal.css' %}?v=25">
+    <link rel="stylesheet" href="{% static 'accounts/css/profile_modal.css' %}?v=32">
     <link rel="stylesheet" href="{% static 'accounts/css/verify_email.css' %}?v=2">
     <title>Chat Rooms</title>
 </head>
@@ -22,13 +22,19 @@
         <div class="top-bar-actions">
             {% if request.user.is_authenticated %}
                 <div class="profile-widget">
-                    <div id="profile-avatar-container">
-                       
-                    <img
-                        class="profile-widget-avatar"
-                        src="{{ request.user.profile.avatar_url_32 }}"
-                        alt=""
-                    >
+                    <div id="profile-avatar-container" class="{{ request.user.profile.avatar_shape|default:'square' }}">
+                        <img
+                            class="profile-widget-avatar {{ request.user.profile.avatar_shape|default:'square' }}"
+                            src="{{ request.user.profile.avatar_url_32 }}"
+                            alt=""
+                        >
+                        <img
+                            id="topbar-avatar-decoration"
+                            class="profile-widget-decoration"
+                            src="{{ request.user.profile.decoration_url }}"
+                            alt=""
+                            style="{{ request.user.profile.topbar_decoration_style }}{% if not request.user.profile.frame_key %} display: none;{% endif %}"
+                        >
                     </div>
                     <span class="profile-widget-name">
                         {{ request.user.profile.effective_display_name }}
@@ -90,11 +96,11 @@
     <script type="module" src="{% static 'js/LandingPage/main.js' %}"></script>
     {% if not request.user.is_authenticated %}
         <script src="{% static 'accounts/js/verify_email.js' %}"></script>
-        <script type="module" src="{% static 'accounts/js/auth_modal.js' %}?v=25"></script>
-        <script type="module" src="{% static 'accounts/js/profile_modal.js' %}?v=25"></script>
+        <script type="module" src="{% static 'accounts/js/auth_modal.js' %}?v=27"></script>
+        <script type="module" src="{% static 'accounts/js/profile_modal.js' %}?v=35"></script>
     {% else %}
-        <script type="module" src="{% static 'accounts/js/auth_modal.js' %}?v=25"></script>
-        <script type="module" src="{% static 'accounts/js/profile_modal.js' %}?v=25"></script>
+        <script type="module" src="{% static 'accounts/js/auth_modal.js' %}?v=27"></script>
+        <script type="module" src="{% static 'accounts/js/profile_modal.js' %}?v=35"></script>
     {% endif %}
 
 </body>

@@ -13,7 +13,7 @@ from django.core.validators import validate_email
 from django.http import JsonResponse
 
 from django.contrib.auth.decorators import login_required
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_GET
 
 
 from django.shortcuts import render
@@ -459,7 +459,7 @@ def update_profile(request):
                 delete_from_r2_or_local(profile.banner_key)
             profile.banner_key = key
 
-        # 7. Handle Avatar Shape, Status Badge, and Banner Color options
+        # 7. Handle Avatar Shape, Status Badge, Banner Color, and Decoration options
         new_avatar_shape = data.get('avatar_shape')
         if new_avatar_shape in ('square', 'round'):
             profile.avatar_shape = new_avatar_shape
@@ -472,6 +472,13 @@ def update_profile(request):
         if new_banner_color:
             if new_banner_color.startswith('#') and len(new_banner_color) in (4, 7):
                 profile.banner_color = new_banner_color
+
+        if data.get('remove_decoration') is True:
+            profile.frame_key = ""
+        elif 'decoration_key' in data or 'frame_key' in data:
+            dec_key = data.get('decoration_key') if 'decoration_key' in data else data.get('frame_key')
+            if dec_key is not None:
+                profile.frame_key = str(dec_key).strip()
 
         # 8. Save Changes to the database
         profile.save()
@@ -488,12 +495,25 @@ def update_profile(request):
             'banner_url_sm': profile.banner_url_sm,
             'avatar_shape': profile.avatar_shape,
             'show_status_badge': profile.show_status_badge,
+            'frame_key': profile.frame_key,
+            'decoration_key': profile.frame_key,
+            'decoration_url': profile.decoration_url,
         })
     except json.JSONDecodeError:
         return JsonResponse({'ok': False, 'message': 'Invalid JSON data'}, status=400)
     except Exception as e:
         print(f"Error updating profile: {e}")
         return JsonResponse({'ok': False, 'message': 'Internal Server Error'}, status=500)
+
+@login_required
+@require_GET
+def get_decorations(request):
+    from .decorations import DECORATIONS
+    return JsonResponse({
+        'ok': True,
+        'decorations': DECORATIONS,
+        'current_decoration': request.user.profile.frame_key or "",
+    })
 
 @login_required
 @require_POST # only allow POST requests 

@@ -57,6 +57,7 @@
     width: 64px;
     height: 64px;
     cursor: pointer;
+    box-sizing: border-box;
 }
 
 .profile-avatar {
@@ -66,6 +67,7 @@
     border: 2px solid black;
     background: white;
     display: block;
+    box-sizing: border-box;
     transition: border-radius 0.2s ease, filter 0.2s ease;
 }
 
@@ -126,6 +128,20 @@
     border-radius: 50% !important;
 }
 
+.profile-avatar-decoration {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 120%;
+    height: 120%;
+    pointer-events: none;
+    z-index: 4;
+    display: block;
+    object-fit: contain;
+    box-sizing: border-box;
+}
+
 .profile-status-badge {
     position: absolute;
     bottom: -3px;
@@ -137,7 +153,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 2;
+    z-index: 6;
     pointer-events: none;
 }
 
@@ -147,6 +163,14 @@
     image-rendering: pixelated;
     display: block;
     background: transparent;
+    filter: drop-shadow(1.3px 0 0 #000000) 
+            drop-shadow(-1.3px 0 0 #000000) 
+            drop-shadow(0 1.3px 0 #000000) 
+            drop-shadow(0 -1.3px 0 #000000)
+            drop-shadow(0.9px 0.9px 0 #000000) 
+            drop-shadow(-0.9px -0.9px 0 #000000) 
+            drop-shadow(0.9px -0.9px 0 #000000) 
+            drop-shadow(-0.9px 0.9px 0 #000000);
 }
 
 .profile-content {
